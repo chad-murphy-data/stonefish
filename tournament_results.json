@@ -1,0 +1,1679 @@
+{
+  "config": {
+    "games_per_matchup": 50,
+    "depth": 14
+  },
+  "started": "2026-02-15T02:38:54.648536",
+  "matchups": [
+    {
+      "label": "Nett vs RT3-Weighted",
+      "bot_a": "Nettlesome(d=14,c=7)",
+      "bot_b": "RandomTop3(d=14)",
+      "games": [
+        {
+          "game_num": 1,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 57,
+          "time": 108.8
+        },
+        {
+          "game_num": 2,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 86,
+          "time": 98.9
+        },
+        {
+          "game_num": 3,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 111,
+          "time": 124.3
+        },
+        {
+          "game_num": 4,
+          "a_is_white": false,
+          "score": 0.5,
+          "moves": 110,
+          "time": 145.7
+        },
+        {
+          "game_num": 5,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 153,
+          "time": 232.7
+        },
+        {
+          "game_num": 6,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 78,
+          "time": 154.8
+        },
+        {
+          "game_num": 7,
+          "a_is_white": true,
+          "score": 0.5,
+          "moves": 276,
+          "time": 169.4
+        },
+        {
+          "game_num": 8,
+          "a_is_white": false,
+          "score": 0.0,
+          "moves": 83,
+          "time": 80.7
+        },
+        {
+          "game_num": 9,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 131,
+          "time": 145.8
+        },
+        {
+          "game_num": 10,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 90,
+          "time": 127.9
+        },
+        {
+          "game_num": 11,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 73,
+          "time": 89.5
+        },
+        {
+          "game_num": 12,
+          "a_is_white": false,
+          "score": 0.0,
+          "moves": 151,
+          "time": 289.3
+        },
+        {
+          "game_num": 13,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 137,
+          "time": 212.9
+        },
+        {
+          "game_num": 14,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 132,
+          "time": 146.3
+        },
+        {
+          "game_num": 15,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 87,
+          "time": 117.5
+        },
+        {
+          "game_num": 16,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 62,
+          "time": 110.0
+        },
+        {
+          "game_num": 17,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 109,
+          "time": 102.9
+        },
+        {
+          "game_num": 18,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 100,
+          "time": 120.6
+        },
+        {
+          "game_num": 19,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 127,
+          "time": 115.7
+        },
+        {
+          "game_num": 20,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 144,
+          "time": 200.0
+        },
+        {
+          "game_num": 21,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 117,
+          "time": 158.7
+        },
+        {
+          "game_num": 22,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 136,
+          "time": 176.5
+        },
+        {
+          "game_num": 23,
+          "a_is_white": true,
+          "score": 0.5,
+          "moves": 177,
+          "time": 233.3
+        },
+        {
+          "game_num": 24,
+          "a_is_white": false,
+          "score": 0.0,
+          "moves": 79,
+          "time": 112.1
+        },
+        {
+          "game_num": 25,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 151,
+          "time": 133.2
+        },
+        {
+          "game_num": 26,
+          "a_is_white": false,
+          "score": 0.0,
+          "moves": 71,
+          "time": 85.7
+        },
+        {
+          "game_num": 27,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 101,
+          "time": 162.8
+        },
+        {
+          "game_num": 28,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 184,
+          "time": 234.7
+        },
+        {
+          "game_num": 29,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 101,
+          "time": 122.6
+        },
+        {
+          "game_num": 30,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 214,
+          "time": 151.4
+        },
+        {
+          "game_num": 31,
+          "a_is_white": true,
+          "score": 0.0,
+          "moves": 112,
+          "time": 129.2
+        },
+        {
+          "game_num": 32,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 160,
+          "time": 174.2
+        },
+        {
+          "game_num": 33,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 111,
+          "time": 141.5
+        },
+        {
+          "game_num": 34,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 58,
+          "time": 87.8
+        },
+        {
+          "game_num": 35,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 65,
+          "time": 122.2
+        },
+        {
+          "game_num": 36,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 128,
+          "time": 102.4
+        },
+        {
+          "game_num": 37,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 83,
+          "time": 130.5
+        },
+        {
+          "game_num": 38,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 122,
+          "time": 107.1
+        },
+        {
+          "game_num": 39,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 83,
+          "time": 105.0
+        },
+        {
+          "game_num": 40,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 172,
+          "time": 155.5
+        },
+        {
+          "game_num": 41,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 241,
+          "time": 205.6
+        },
+        {
+          "game_num": 42,
+          "a_is_white": false,
+          "score": 0.0,
+          "moves": 125,
+          "time": 142.8
+        },
+        {
+          "game_num": 43,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 97,
+          "time": 124.2
+        },
+        {
+          "game_num": 44,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 140,
+          "time": 108.7
+        },
+        {
+          "game_num": 45,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 115,
+          "time": 103.3
+        },
+        {
+          "game_num": 46,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 90,
+          "time": 98.3
+        },
+        {
+          "game_num": 47,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 155,
+          "time": 308.8
+        },
+        {
+          "game_num": 48,
+          "a_is_white": false,
+          "score": 0.0,
+          "moves": 115,
+          "time": 98.0
+        },
+        {
+          "game_num": 49,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 167,
+          "time": 179.4
+        },
+        {
+          "game_num": 50,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 66,
+          "time": 45.4
+        }
+      ],
+      "bot_a_wins": 40,
+      "bot_b_wins": 7,
+      "draws": 3,
+      "total_moves": 6033,
+      "bot_a_win_moves": [
+        57,
+        86,
+        111,
+        153,
+        78,
+        131,
+        90,
+        73,
+        137,
+        132,
+        87,
+        62,
+        109,
+        100,
+        127,
+        144,
+        117,
+        136,
+        151,
+        101,
+        184,
+        101,
+        214,
+        160,
+        111,
+        58,
+        65,
+        128,
+        83,
+        122,
+        83,
+        172,
+        241,
+        97,
+        140,
+        115,
+        90,
+        155,
+        167,
+        66
+      ],
+      "bot_b_win_moves": [
+        83,
+        151,
+        79,
+        71,
+        112,
+        125,
+        115
+      ],
+      "a_score_pct": 0.83,
+      "avg_moves": 120.66,
+      "avg_a_win_moves": 118.35,
+      "avg_b_win_moves": 105.14285714285714
+    },
+    {
+      "label": "SF vs RT3-Weighted",
+      "bot_a": "PureStockfish(d=14)",
+      "bot_b": "RandomTop3(d=14)",
+      "games": [
+        {
+          "game_num": 1,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 147,
+          "time": 37.0
+        },
+        {
+          "game_num": 2,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 144,
+          "time": 24.6
+        },
+        {
+          "game_num": 3,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 95,
+          "time": 20.9
+        },
+        {
+          "game_num": 4,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 128,
+          "time": 30.7
+        },
+        {
+          "game_num": 5,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 73,
+          "time": 18.8
+        },
+        {
+          "game_num": 6,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 152,
+          "time": 32.8
+        },
+        {
+          "game_num": 7,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 113,
+          "time": 15.2
+        },
+        {
+          "game_num": 8,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 96,
+          "time": 11.9
+        },
+        {
+          "game_num": 9,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 71,
+          "time": 10.2
+        },
+        {
+          "game_num": 10,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 66,
+          "time": 14.1
+        },
+        {
+          "game_num": 11,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 93,
+          "time": 22.0
+        },
+        {
+          "game_num": 12,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 114,
+          "time": 13.0
+        },
+        {
+          "game_num": 13,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 113,
+          "time": 26.7
+        },
+        {
+          "game_num": 14,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 144,
+          "time": 29.4
+        },
+        {
+          "game_num": 15,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 121,
+          "time": 25.6
+        },
+        {
+          "game_num": 16,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 110,
+          "time": 26.5
+        },
+        {
+          "game_num": 17,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 75,
+          "time": 12.1
+        },
+        {
+          "game_num": 18,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 66,
+          "time": 11.3
+        },
+        {
+          "game_num": 19,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 77,
+          "time": 19.6
+        },
+        {
+          "game_num": 20,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 120,
+          "time": 15.9
+        },
+        {
+          "game_num": 21,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 89,
+          "time": 9.6
+        },
+        {
+          "game_num": 22,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 112,
+          "time": 24.3
+        },
+        {
+          "game_num": 23,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 71,
+          "time": 16.7
+        },
+        {
+          "game_num": 24,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 74,
+          "time": 19.7
+        },
+        {
+          "game_num": 25,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 99,
+          "time": 14.9
+        },
+        {
+          "game_num": 26,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 110,
+          "time": 18.6
+        },
+        {
+          "game_num": 27,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 107,
+          "time": 17.7
+        },
+        {
+          "game_num": 28,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 124,
+          "time": 20.3
+        },
+        {
+          "game_num": 29,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 119,
+          "time": 29.0
+        },
+        {
+          "game_num": 30,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 90,
+          "time": 16.2
+        },
+        {
+          "game_num": 31,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 67,
+          "time": 11.2
+        },
+        {
+          "game_num": 32,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 104,
+          "time": 13.2
+        },
+        {
+          "game_num": 33,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 93,
+          "time": 10.4
+        },
+        {
+          "game_num": 34,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 74,
+          "time": 8.7
+        },
+        {
+          "game_num": 35,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 111,
+          "time": 19.5
+        },
+        {
+          "game_num": 36,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 88,
+          "time": 12.4
+        },
+        {
+          "game_num": 37,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 87,
+          "time": 14.9
+        },
+        {
+          "game_num": 38,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 110,
+          "time": 33.1
+        },
+        {
+          "game_num": 39,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 81,
+          "time": 14.3
+        },
+        {
+          "game_num": 40,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 92,
+          "time": 16.2
+        },
+        {
+          "game_num": 41,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 131,
+          "time": 23.7
+        },
+        {
+          "game_num": 42,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 100,
+          "time": 18.8
+        },
+        {
+          "game_num": 43,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 99,
+          "time": 15.4
+        },
+        {
+          "game_num": 44,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 64,
+          "time": 10.5
+        },
+        {
+          "game_num": 45,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 71,
+          "time": 14.0
+        },
+        {
+          "game_num": 46,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 72,
+          "time": 11.5
+        },
+        {
+          "game_num": 47,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 91,
+          "time": 17.3
+        },
+        {
+          "game_num": 48,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 98,
+          "time": 17.7
+        },
+        {
+          "game_num": 49,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 71,
+          "time": 18.4
+        },
+        {
+          "game_num": 50,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 98,
+          "time": 16.9
+        }
+      ],
+      "bot_a_wins": 50,
+      "bot_b_wins": 0,
+      "draws": 0,
+      "total_moves": 4915,
+      "bot_a_win_moves": [
+        147,
+        144,
+        95,
+        128,
+        73,
+        152,
+        113,
+        96,
+        71,
+        66,
+        93,
+        114,
+        113,
+        144,
+        121,
+        110,
+        75,
+        66,
+        77,
+        120,
+        89,
+        112,
+        71,
+        74,
+        99,
+        110,
+        107,
+        124,
+        119,
+        90,
+        67,
+        104,
+        93,
+        74,
+        111,
+        88,
+        87,
+        110,
+        81,
+        92,
+        131,
+        100,
+        99,
+        64,
+        71,
+        72,
+        91,
+        98,
+        71,
+        98
+      ],
+      "bot_b_win_moves": [],
+      "a_score_pct": 1.0,
+      "avg_moves": 98.3,
+      "avg_a_win_moves": 98.3,
+      "avg_b_win_moves": 0
+    },
+    {
+      "label": "Nett vs RT5",
+      "bot_a": "Nettlesome(d=14,c=7)",
+      "bot_b": "RandomTop5(d=14)",
+      "games": [
+        {
+          "game_num": 1,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 67,
+          "time": 103.6
+        },
+        {
+          "game_num": 2,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 68,
+          "time": 88.9
+        },
+        {
+          "game_num": 3,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 69,
+          "time": 83.4
+        },
+        {
+          "game_num": 4,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 90,
+          "time": 156.6
+        },
+        {
+          "game_num": 5,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 67,
+          "time": 142.7
+        },
+        {
+          "game_num": 6,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 52,
+          "time": 69.7
+        },
+        {
+          "game_num": 7,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 69,
+          "time": 69.4
+        },
+        {
+          "game_num": 8,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 76,
+          "time": 125.7
+        },
+        {
+          "game_num": 9,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 79,
+          "time": 105.1
+        },
+        {
+          "game_num": 10,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 76,
+          "time": 97.4
+        },
+        {
+          "game_num": 11,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 67,
+          "time": 108.8
+        },
+        {
+          "game_num": 12,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 54,
+          "time": 61.9
+        },
+        {
+          "game_num": 13,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 41,
+          "time": 37.9
+        },
+        {
+          "game_num": 14,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 52,
+          "time": 47.6
+        },
+        {
+          "game_num": 15,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 95,
+          "time": 114.0
+        },
+        {
+          "game_num": 16,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 64,
+          "time": 95.5
+        },
+        {
+          "game_num": 17,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 47,
+          "time": 52.6
+        },
+        {
+          "game_num": 18,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 62,
+          "time": 115.5
+        },
+        {
+          "game_num": 19,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 53,
+          "time": 70.1
+        },
+        {
+          "game_num": 20,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 82,
+          "time": 78.3
+        },
+        {
+          "game_num": 21,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 89,
+          "time": 134.8
+        },
+        {
+          "game_num": 22,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 36,
+          "time": 71.6
+        },
+        {
+          "game_num": 23,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 61,
+          "time": 122.6
+        },
+        {
+          "game_num": 24,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 80,
+          "time": 92.0
+        },
+        {
+          "game_num": 25,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 47,
+          "time": 80.9
+        },
+        {
+          "game_num": 26,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 58,
+          "time": 97.6
+        },
+        {
+          "game_num": 27,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 83,
+          "time": 83.7
+        },
+        {
+          "game_num": 28,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 54,
+          "time": 95.4
+        },
+        {
+          "game_num": 29,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 73,
+          "time": 94.9
+        },
+        {
+          "game_num": 30,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 48,
+          "time": 47.3
+        },
+        {
+          "game_num": 31,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 109,
+          "time": 106.6
+        },
+        {
+          "game_num": 32,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 60,
+          "time": 51.2
+        },
+        {
+          "game_num": 33,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 65,
+          "time": 71.0
+        },
+        {
+          "game_num": 34,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 68,
+          "time": 58.6
+        },
+        {
+          "game_num": 35,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 59,
+          "time": 65.8
+        },
+        {
+          "game_num": 36,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 54,
+          "time": 79.2
+        },
+        {
+          "game_num": 37,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 21,
+          "time": 46.9
+        },
+        {
+          "game_num": 38,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 70,
+          "time": 81.0
+        },
+        {
+          "game_num": 39,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 69,
+          "time": 86.5
+        },
+        {
+          "game_num": 40,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 68,
+          "time": 99.7
+        },
+        {
+          "game_num": 41,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 57,
+          "time": 100.4
+        },
+        {
+          "game_num": 42,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 30,
+          "time": 31.2
+        },
+        {
+          "game_num": 43,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 25,
+          "time": 23.4
+        },
+        {
+          "game_num": 44,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 60,
+          "time": 70.5
+        },
+        {
+          "game_num": 45,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 69,
+          "time": 82.5
+        },
+        {
+          "game_num": 46,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 46,
+          "time": 98.9
+        },
+        {
+          "game_num": 47,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 73,
+          "time": 117.8
+        },
+        {
+          "game_num": 48,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 26,
+          "time": 44.1
+        },
+        {
+          "game_num": 49,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 89,
+          "time": 132.5
+        },
+        {
+          "game_num": 50,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 58,
+          "time": 49.0
+        }
+      ],
+      "bot_a_wins": 50,
+      "bot_b_wins": 0,
+      "draws": 0,
+      "total_moves": 3135,
+      "bot_a_win_moves": [
+        67,
+        68,
+        69,
+        90,
+        67,
+        52,
+        69,
+        76,
+        79,
+        76,
+        67,
+        54,
+        41,
+        52,
+        95,
+        64,
+        47,
+        62,
+        53,
+        82,
+        89,
+        36,
+        61,
+        80,
+        47,
+        58,
+        83,
+        54,
+        73,
+        48,
+        109,
+        60,
+        65,
+        68,
+        59,
+        54,
+        21,
+        70,
+        69,
+        68,
+        57,
+        30,
+        25,
+        60,
+        69,
+        46,
+        73,
+        26,
+        89,
+        58
+      ],
+      "bot_b_win_moves": [],
+      "a_score_pct": 1.0,
+      "avg_moves": 62.7,
+      "avg_a_win_moves": 62.7,
+      "avg_b_win_moves": 0
+    },
+    {
+      "label": "SF vs RT5",
+      "bot_a": "PureStockfish(d=14)",
+      "bot_b": "RandomTop5(d=14)",
+      "games": [
+        {
+          "game_num": 1,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 55,
+          "time": 14.6
+        },
+        {
+          "game_num": 2,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 74,
+          "time": 21.0
+        },
+        {
+          "game_num": 3,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 49,
+          "time": 15.8
+        },
+        {
+          "game_num": 4,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 68,
+          "time": 16.3
+        },
+        {
+          "game_num": 5,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 89,
+          "time": 15.1
+        },
+        {
+          "game_num": 6,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 68,
+          "time": 16.5
+        },
+        {
+          "game_num": 7,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 85,
+          "time": 17.2
+        },
+        {
+          "game_num": 8,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 64,
+          "time": 15.0
+        },
+        {
+          "game_num": 9,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 95,
+          "time": 21.5
+        },
+        {
+          "game_num": 10,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 66,
+          "time": 19.9
+        },
+        {
+          "game_num": 11,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 57,
+          "time": 11.5
+        },
+        {
+          "game_num": 12,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 92,
+          "time": 21.4
+        },
+        {
+          "game_num": 13,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 43,
+          "time": 6.7
+        },
+        {
+          "game_num": 14,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 86,
+          "time": 17.7
+        },
+        {
+          "game_num": 15,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 67,
+          "time": 15.2
+        },
+        {
+          "game_num": 16,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 100,
+          "time": 19.5
+        },
+        {
+          "game_num": 17,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 59,
+          "time": 13.9
+        },
+        {
+          "game_num": 18,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 46,
+          "time": 12.1
+        },
+        {
+          "game_num": 19,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 69,
+          "time": 15.0
+        },
+        {
+          "game_num": 20,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 70,
+          "time": 14.5
+        },
+        {
+          "game_num": 21,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 65,
+          "time": 15.9
+        },
+        {
+          "game_num": 22,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 52,
+          "time": 18.7
+        },
+        {
+          "game_num": 23,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 59,
+          "time": 21.3
+        },
+        {
+          "game_num": 24,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 86,
+          "time": 22.5
+        },
+        {
+          "game_num": 25,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 73,
+          "time": 16.8
+        },
+        {
+          "game_num": 26,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 70,
+          "time": 15.0
+        },
+        {
+          "game_num": 27,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 51,
+          "time": 19.9
+        },
+        {
+          "game_num": 28,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 52,
+          "time": 15.5
+        },
+        {
+          "game_num": 29,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 57,
+          "time": 22.6
+        },
+        {
+          "game_num": 30,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 56,
+          "time": 18.8
+        },
+        {
+          "game_num": 31,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 73,
+          "time": 14.7
+        },
+        {
+          "game_num": 32,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 58,
+          "time": 14.8
+        },
+        {
+          "game_num": 33,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 57,
+          "time": 14.8
+        },
+        {
+          "game_num": 34,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 76,
+          "time": 21.2
+        },
+        {
+          "game_num": 35,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 49,
+          "time": 17.1
+        },
+        {
+          "game_num": 36,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 62,
+          "time": 18.8
+        },
+        {
+          "game_num": 37,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 83,
+          "time": 15.5
+        },
+        {
+          "game_num": 38,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 110,
+          "time": 31.9
+        },
+        {
+          "game_num": 39,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 85,
+          "time": 22.2
+        },
+        {
+          "game_num": 40,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 44,
+          "time": 10.3
+        },
+        {
+          "game_num": 41,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 69,
+          "time": 25.1
+        },
+        {
+          "game_num": 42,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 88,
+          "time": 18.8
+        },
+        {
+          "game_num": 43,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 73,
+          "time": 18.8
+        },
+        {
+          "game_num": 44,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 76,
+          "time": 16.8
+        },
+        {
+          "game_num": 45,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 61,
+          "time": 14.4
+        },
+        {
+          "game_num": 46,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 88,
+          "time": 26.9
+        },
+        {
+          "game_num": 47,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 45,
+          "time": 8.4
+        },
+        {
+          "game_num": 48,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 66,
+          "time": 18.4
+        },
+        {
+          "game_num": 49,
+          "a_is_white": true,
+          "score": 1.0,
+          "moves": 85,
+          "time": 18.7
+        },
+        {
+          "game_num": 50,
+          "a_is_white": false,
+          "score": 1.0,
+          "moves": 54,
+          "time": 13.9
+        }
+      ],
+      "bot_a_wins": 50,
+      "bot_b_wins": 0,
+      "draws": 0,
+      "total_moves": 3425,
+      "bot_a_win_moves": [
+        55,
+        74,
+        49,
+        68,
+        89,
+        68,
+        85,
+        64,
+        95,
+        66,
+        57,
+        92,
+        43,
+        86,
+        67,
+        100,
+        59,
+        46,
+        69,
+        70,
+        65,
+        52,
+        59,
+        86,
+        73,
+        70,
+        51,
+        52,
+        57,
+        56,
+        73,
+        58,
+        57,
+        76,
+        49,
+        62,
+        83,
+        110,
+        85,
+        44,
+        69,
+        88,
+        73,
+        76,
+        61,
+        88,
+        45,
+        66,
+        85,
+        54
+      ],
+      "bot_b_win_moves": [],
+      "a_score_pct": 1.0,
+      "avg_moves": 68.5,
+      "avg_a_win_moves": 68.5,
+      "avg_b_win_moves": 0
+    }
+  ]
+}

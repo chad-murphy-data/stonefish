@@ -1,0 +1,421 @@
+"""
+Stonefish Scoring — Find THE Move + Depth Disagreement
+=======================================================
+Two filters determine a critical moment:
+    1. GAP: The best opponent response is >= gap_threshold pawns better than
+       the second-best. One move works, everything else hurts.
+    2. DISAGREEMENT: The best move at deep depth (12) is ranked poorly at
+       shallow depth (2). The right move isn't obvious — it requires
+       calculation, not pattern recognition.
+
+Both must be true. This filters out trivial recaptures and check escapes
+while keeping genuinely hard positions where intuition fails.
+
+Depth disagreement also drives move selection: Stonefish prefers candidates
+that look bad at shallow depth but are actually fine at deep depth —
+sacrifices that aren't really sacrifices, quiet moves that set traps.
+"""
+
+import chess
+from dataclasses import dataclass, field
+from typing import List, Tuple, Optional
+
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from engine import get_top_moves
+
+from .config import StonefishConfig
+
+
+@dataclass
+class MoveScore:
+    """Result of nettlesomeness evaluation for a single candidate move."""
+    move: chess.Move
+    move_san: str
+    own_eval: float              # This candidate's eval (from our perspective, pawns)
+    move_rank: int               # Rank among our candidates (0 = top Stockfish move)
+    gap: float                   # eval(opponent move 1) - eval(opponent move 2) — higher = more nettlesome
+    opponent_evals: List[Tuple[str, float]]  # All opponent response (move_san, eval) pairs
+    nettlesomeness_score: float  # Final composite score used for move selection
+    deep_best_opponent_move: Optional[chess.Move] = None  # Best opponent response at deep depth
+
+
+@dataclass
+class CriticalityResult:
+    """Assessment of how critical a position is for the opponent."""
+    is_critical: bool
+    gap: float                   # The move 1 vs move 2 gap
+    disagreement: int            # Rank of deep best move at shallow depth (0 = agrees)
+
+
+def compute_move_score(
+    engine,
+    board: chess.Board,
+    candidate_move: chess.Move,
+    candidate_eval: float,
+    candidate_rank: int,
+    depth: int,
+    num_responses: int = 6,
+) -> MoveScore:
+    """Evaluate a candidate move by measuring the gap in opponent's responses.
+
+    After pushing candidate_move, gets the opponent's top responses at deep depth.
+    The gap = eval(move 1) - eval(move 2) from opponent's perspective.
+    Higher gap = only one move works = more nettlesome.
+
+    Also returns the deep best opponent move for later disagreement checking.
+    """
+    our_color = board.turn
+    opp_sign = -1.0 if our_color == chess.WHITE else 1.0
+
+    move_san = board.san(candidate_move)
+    board.push(candidate_move)
+
+    # Get opponent's top responses at deep depth
+    responses = get_top_moves(engine, board, num_moves=num_responses, depth=depth)
+
+    board.pop()
+
+    if len(responses) < 2:
+        opp_evals = [(board.san(m) if board.is_legal(m) else str(m), e * opp_sign)
+                     for m, e in responses] if responses else []
+        deep_best = responses[0][0] if responses else None
+        return MoveScore(
+            move=candidate_move,
+            move_san=move_san,
+            own_eval=candidate_eval,
+            move_rank=candidate_rank,
+            gap=0.0,
+            opponent_evals=opp_evals,
+            nettlesomeness_score=0.0,
+            deep_best_opponent_move=deep_best,
+        )
+
+    # Convert evals to opponent's perspective
+    opp_evals_raw = [e * opp_sign for _, e in responses]
+
+    # Build (san, eval) pairs for logging
+    board.push(candidate_move)
+    opp_eval_pairs = []
+    for move, eval_white in responses:
+        try:
+            san = board.san(move)
+        except Exception:
+            san = move.uci()
+        opp_eval_pairs.append((san, eval_white * opp_sign))
+    board.pop()
+
+    # THE gap: how much worse is the second-best move compared to the best?
+    gap = opp_evals_raw[0] - opp_evals_raw[1]
+
+    return MoveScore(
+        move=candidate_move,
+        move_san=move_san,
+        own_eval=candidate_eval,
+        move_rank=candidate_rank,
+        gap=gap,
+        opponent_evals=opp_eval_pairs,
+        nettlesomeness_score=gap,  # Will be adjusted by caller
+        deep_best_opponent_move=responses[0][0],
+    )
+
+
+def compute_disagreement(
+    engine,
+    board: chess.Board,
+    after_move: chess.Move,
+    deep_best_opponent_move: chess.Move,
+    shallow_depth: int,
+    num_check: int = 6,
+) -> int:
+    """Compute depth disagreement for the opponent's position.
+
+    After pushing after_move (Stonefish's candidate), evaluate the opponent's
+    position at shallow_depth and find where the deep best move ranks.
+
+    Returns the rank of deep_best_opponent_move at shallow depth.
+    0 = shallow agrees with deep (obvious move), higher = more disagreement.
+    """
+    board.push(after_move)
+
+    shallow_responses = get_top_moves(engine, board, num_moves=num_check, depth=shallow_depth)
+
+    board.pop()
+
+    if not shallow_responses:
+        return 0
+
+    for i, (move, _) in enumerate(shallow_responses):
+        if move == deep_best_opponent_move:
+            return i
+
+    # Not found in top N at shallow depth — maximum disagreement
+    return num_check
+
+
+def assess_criticality(
+    gap: float,
+    disagreement: int,
+    config: StonefishConfig,
+) -> CriticalityResult:
+    """Determine if a position is critical for the opponent.
+
+    Critical = ALL of:
+        1. Gap >= gap_threshold — real consequences
+        2. Disagreement >= disagreement_threshold — right move isn't obvious
+        3. (Cooldown is checked separately in game_state.py)
+    """
+    is_critical = (
+        gap >= config.gap_threshold
+        and disagreement >= config.disagreement_threshold
+    )
+
+    return CriticalityResult(
+        is_critical=is_critical,
+        gap=gap,
+        disagreement=disagreement,
+    )
+
+
+def rank_opponent_move(
+    engine,
+    board: chess.Board,
+    opponent_move: chess.Move,
+    target_band: int,
+    depth: int,
+) -> Tuple[int, float, str]:
+    """Determine the rank, eval cost, and best move for the opponent's actual move.
+
+    Returns:
+        (rank, eval_cost, best_move_san) where rank is 0-indexed among top moves,
+        eval_cost is how many pawns they lost vs the best move, and
+        best_move_san is the SAN of the objectively best move.
+    """
+    num_check = max(2 * target_band, 6)
+    top_moves = get_top_moves(engine, board, num_moves=num_check, depth=depth)
+
+    if not top_moves:
+        return (0, 0.0, "")
+
+    opp_color = board.turn
+    sign = 1.0 if opp_color == chess.WHITE else -1.0
+
+    best_eval = top_moves[0][1] * sign
+    try:
+        best_move_san = board.san(top_moves[0][0])
+    except Exception:
+        best_move_san = top_moves[0][0].uci()
+
+    for i, (move, eval_white) in enumerate(top_moves):
+        if move == opponent_move:
+            eval_for_opp = eval_white * sign
+            eval_cost = best_eval - eval_for_opp
+            return (i, max(0.0, eval_cost), best_move_san)
+
+    worst_eval = top_moves[-1][1] * sign
+    return (num_check, max(0.0, best_eval - worst_eval), best_move_san)
+
+
+def select_stonefish_move(engine, board, config, current_shallow_depth, move_number,
+                          our_clock_seconds=None):
+    """Two-pass move selection: the core of Stonefish.
+
+    Pass 1 — Hands (current_shallow_depth):
+        - Generate candidate moves at shallow depth (sets playing strength)
+
+    Pass 2 — Brain (config.deep_depth):
+        - Among the shallow-pass candidates, evaluate nettlesomeness at deep depth
+        - Compute depth disagreement bonus: reward moves that look bad but are fine
+        - Pick the move that maximizes gap + disagreement bonus
+        - When losing, eval cost cap widens so Stonefish creates chaos
+
+    Criticality check:
+        - Gap >= threshold AND disagreement >= threshold
+        - Filters out trivial recaptures, keeps genuinely hard positions
+
+    Emergency mode — When clock is below emergency_clock_seconds:
+        - Skip deep pass entirely, play at emergency_depth
+
+    Returns a MoveResult (imported from game_state) with all data for logging/chat.
+    """
+    from .game_state import MoveResult
+
+    our_color = board.turn
+    sign = 1.0 if our_color == chess.WHITE else -1.0
+
+    # === EMERGENCY MODE ===
+    emergency = (our_clock_seconds is not None
+                 and our_clock_seconds < config.emergency_clock_seconds)
+
+    if emergency:
+        emg_candidates = get_top_moves(
+            engine, board,
+            num_moves=3,
+            depth=config.emergency_depth,
+        )
+        if not emg_candidates:
+            import random
+            fallback = random.choice(list(board.legal_moves))
+            emg_candidates = [(fallback, 0.0)]
+        move, ev = emg_candidates[0]
+        return MoveResult(
+            move=move,
+            move_san=board.san(move),
+            move_rank=0,
+            top_engine_move=board.san(move),
+            deep_eval=round(ev * sign, 3),
+            shallow_eval=round(ev * sign, 3),
+            candidate_evals=[(board.san(m), round(e, 3)) for m, e in emg_candidates],
+            nettlesomeness_score=0.0,
+            gap=0.0,
+            disagreement=0,
+            was_flagged_critical=False,
+            current_shallow_depth=config.emergency_depth,
+            deep_depth=0,
+            move_number=move_number,
+            emergency_mode=True,
+        )
+
+    # === PASS 1: HANDS (Shallow — sets playing strength) ===
+    num_cands = config.num_candidates
+    candidates = get_top_moves(
+        engine, board,
+        num_moves=num_cands,
+        depth=current_shallow_depth,
+    )
+
+    if not candidates:
+        import random
+        fallback = random.choice(list(board.legal_moves))
+        return MoveResult(
+            move=fallback,
+            move_san=board.san(fallback),
+            move_rank=0,
+            top_engine_move=board.san(fallback),
+            deep_eval=0.0,
+            shallow_eval=0.0,
+            candidate_evals=[],
+            nettlesomeness_score=0.0,
+            gap=0.0,
+            disagreement=0,
+            was_flagged_critical=False,
+            current_shallow_depth=current_shallow_depth,
+            deep_depth=config.deep_depth,
+            move_number=move_number,
+        )
+
+    best_eval_for_us = candidates[0][1] * sign
+    top_engine_move_san = board.san(candidates[0][0])
+
+    # Build candidate evals list for logging (shallow evals)
+    candidate_evals_log = []
+    for m, e in candidates:
+        candidate_evals_log.append((board.san(m), round(e, 3)))
+
+    shallow_eval = best_eval_for_us
+
+    # === Shallow eval of OUR candidates for disagreement bonus ===
+    # Get shallow evals for each candidate to compute "how bad does this look?"
+    # This is a quick depth-2 eval of our position — nearly instant.
+    shallow_our_candidates = get_top_moves(
+        engine, board,
+        num_moves=num_cands,
+        depth=config.shallow_comparison_depth,
+    )
+    # Build a map: move -> shallow eval (from our perspective)
+    shallow_eval_map = {}
+    if shallow_our_candidates:
+        best_shallow_for_us = shallow_our_candidates[0][1] * sign
+        for m, e in shallow_our_candidates:
+            shallow_eval_map[m] = e * sign
+    else:
+        best_shallow_for_us = best_eval_for_us
+
+    # === PASS 2: BRAIN (Deep — find moves that create "one right answer" + disagreement) ===
+
+    # Determine effective max_eval_cost based on position eval
+    effective_max_eval_cost = config.max_eval_cost
+    if shallow_eval < config.desperate_eval_threshold:
+        effective_max_eval_cost = config.desperate_max_eval_cost
+    elif shallow_eval < config.losing_eval_threshold:
+        effective_max_eval_cost = config.losing_max_eval_cost
+
+    scored: List[MoveScore] = []
+    for rank, (move, eval_white) in enumerate(candidates):
+        eval_for_us = eval_white * sign
+        eval_cost = best_eval_for_us - eval_for_us
+
+        if eval_cost > effective_max_eval_cost:
+            continue
+
+        score = compute_move_score(
+            engine, board, move,
+            candidate_eval=eval_for_us,
+            candidate_rank=rank,
+            depth=config.deep_depth,
+        )
+
+        # --- Nettlesomeness: gap - eval_cost penalty + disagreement bonus ---
+        raw_nettlesomeness = score.gap
+
+        # How bad does this move LOOK at shallow depth?
+        shallow_eval_of_move = shallow_eval_map.get(move, best_shallow_for_us)
+        shallow_eval_cost = best_shallow_for_us - shallow_eval_of_move
+        # Reward moves that look worse than they are (shallow thinks it's bad, deep says it's fine)
+        disagreement_bonus = max(0.0, shallow_eval_cost) * config.disagreement_bonus_multiplier
+
+        score.nettlesomeness_score = raw_nettlesomeness - eval_cost * 0.5 + disagreement_bonus
+
+        if move_number <= config.opening_moves:
+            boosted = raw_nettlesomeness * config.opening_nettlesomeness_boost
+            score.nettlesomeness_score = boosted - eval_cost * 0.5 + disagreement_bonus
+
+        scored.append(score)
+
+    if not scored:
+        chosen_move = candidates[0][0]
+        chosen_eval = candidates[0][1] * sign
+        chosen_rank = 0
+        chosen_nettlesomeness = 0.0
+        chosen_gap = 0.0
+        chosen_deep_best_opp = None
+    else:
+        scored.sort(key=lambda b: b.nettlesomeness_score, reverse=True)
+        best = scored[0]
+        chosen_move = best.move
+        chosen_eval = best.own_eval
+        chosen_rank = best.move_rank
+        chosen_nettlesomeness = best.nettlesomeness_score
+        chosen_gap = best.gap
+        chosen_deep_best_opp = best.deep_best_opponent_move
+
+    # === DISAGREEMENT CHECK for criticality ===
+    # How does the deep best opponent move rank at shallow depth?
+    if chosen_deep_best_opp is not None and chosen_gap >= config.gap_threshold:
+        disagreement = compute_disagreement(
+            engine, board, chosen_move, chosen_deep_best_opp,
+            shallow_depth=config.shallow_comparison_depth,
+        )
+    else:
+        disagreement = 0
+
+    criticality = assess_criticality(chosen_gap, disagreement, config)
+    deep_eval = chosen_eval
+
+    return MoveResult(
+        move=chosen_move,
+        move_san=board.san(chosen_move),
+        move_rank=chosen_rank,
+        top_engine_move=top_engine_move_san,
+        deep_eval=round(deep_eval, 3),
+        shallow_eval=round(shallow_eval, 3),
+        candidate_evals=candidate_evals_log,
+        nettlesomeness_score=round(chosen_nettlesomeness, 3),
+        gap=round(chosen_gap, 3),
+        disagreement=disagreement,
+        was_flagged_critical=criticality.is_critical,
+        current_shallow_depth=current_shallow_depth,
+        deep_depth=config.deep_depth,
+        move_number=move_number,
+    )

@@ -1,0 +1,42 @@
+{
+    "onboarding": [
+        "Good luck! Just so you know how I work \u2014 I don't try to find the best move for me. I try to find the move that forces you into the hardest decision. Sometimes I'll sacrifice a little bit of my position just to put you at a crossroads where one move is right and the rest will cost you. I'll give you a heads up when I think I've found one of those moments. Let's see how you do!"
+    ],
+    "moderate_criticality": [
+        "A few moves are fine here, but one is clearly better than the rest.",
+        "Take a moment on this one \u2014 there's a right answer.",
+        "Your move here matters more than usual."
+    ],
+    "high_criticality": [
+        "I think I've put you in a tough spot. Choose carefully!",
+        "This is a big moment. The right move keeps you in this.",
+        "I really like my last move. Can you see why?"
+    ],
+    "found_critical": [
+        "Nice find!",
+        "That was the move \u2014 well played!",
+        "You got it!",
+        "Exactly right."
+    ],
+    "missed_critical": [
+        "Not quite \u2014 but don't worry, we'll go over it after the game.",
+        "That one slipped past you. I'll show you what I was looking for later!",
+        "There was a better one there. I'll break it down after the game.",
+        "Almost! We'll look at this one together afterward."
+    ],
+    "post_game_high_solve": [
+        "GG! I created {n_critical} critical moments and you found {n_found} of them \u2014 nice work!"
+    ],
+    "post_game_mid_solve": [
+        "GG! I created {n_critical} critical moments and you found {n_found}. Tricky game! Those moments are hard to spot in real time \u2014 that's what practice is for. Want another go?"
+    ],
+    "post_game_low_solve": [
+        "GG! I created {n_critical} critical moments and you found {n_found}. Don't worry \u2014 spotting these in a live game is a skill that takes time. Want to try again?"
+    ],
+    "post_game_no_critical": [
+        "GG! That was a quick one \u2014 I didn't find many chances to set traps. Want to play again?"
+    ],
+    "post_game_miss_detail": [
+        "Move {move_number}: I played {sf_move} to put you in a tough spot. You played {opp_move} \u2014 {best_response} would have been the stronger choice."
+    ]
+}
