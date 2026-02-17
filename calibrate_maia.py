@@ -40,6 +40,7 @@ from stonefish.config import StonefishConfig
 from stonefish.bot import StonefishBot
 from stonefish.logger import StonefishLogger
 from stonefish.chat import ChatEngine
+from stonefish.presets import apply_preset, get_nearest_preset
 
 logging.basicConfig(
     level=logging.INFO,
@@ -359,12 +360,13 @@ def _process_state(client, game_id, state, our_color, bot, logger, chat,
     _send_chat(client, game_id, chat.on_our_move(result))
 
     emg_tag = " [EMERGENCY]" if result.emergency_mode else ""
-    crit_flag = " *** CRITICAL ***" if result.was_flagged_critical else ""
+    puzzle_flag = f" *** PUZZLE ({result.puzzle_type}) ***" if result.puzzle_found else ""
     log.info(f"Playing {result.move_san} (rank {result.move_rank}, "
-             f"nettl={result.nettlesomeness_score:.2f}, "
-             f"gap={result.gap:.2f}, disagree={result.disagreement}, "
+             f"puzzle={result.puzzle_type}, "
+             f"eval_gap={result.puzzle_eval_gap:.2f}, "
+             f"floor_prob={result.puzzle_floor_prob:.0%}, "
              f"{elapsed:.1f}s)"
-             f"{emg_tag}{crit_flag}")
+             f"{emg_tag}{puzzle_flag}")
 
     for attempt in range(3):
         try:
@@ -499,29 +501,35 @@ def analyze_calibration_logs(log_dir):
 
 def _print_opponent_report(games):
     """Print stats for a set of games."""
-    total_critical = 0
-    total_found = 0
+    total_puzzles = 0
+    total_solved = 0
     total_eval_cost = 0.0
     all_ranks = []
-    all_gaps = []
-    all_disagreements = []
-    gap_pass_disagree_fail = 0  # Gap >= threshold but disagreement too low
+    all_eval_gaps = []
+    all_floor_probs = []
+    puzzle_types = Counter()
     game_lengths = []
     wins = draws = losses = 0
     emergency_moves = 0
     total_sf_moves = 0
+    mate_puzzles = 0
 
     for game in games:
         summary = game.get("summary", {})
         if not summary:
             continue
 
-        critical_count = summary.get("critical_moments_created", 0)
-        found_count = summary.get("critical_moments_found", 0)
-        total_critical += critical_count
-        total_found += found_count
+        puzzle_count = summary.get("puzzles_created", 0)
+        solved_count = summary.get("puzzles_solved", 0)
+        total_puzzles += puzzle_count
+        total_solved += solved_count
         total_eval_cost += summary.get("total_eval_cost_of_misses", 0)
         game_lengths.append(summary.get("total_moves", 0))
+        mate_puzzles += summary.get("mate_puzzles", 0)
+
+        # Puzzle type breakdown
+        for ptype, count in summary.get("puzzle_type_breakdown", {}).items():
+            puzzle_types[ptype] += count
 
         result = summary.get("result", "*")
         our_color = game.get("metadata", {}).get("our_color", "white")
@@ -544,35 +552,35 @@ def _print_opponent_report(games):
             for _ in range(count):
                 all_ranks.append(int(rank_str))
 
-        # Gap and disagreement data from move data
+        # Puzzle data from moves
         for move in game.get("moves", []):
             if move.get("side") == "stonefish":
                 total_sf_moves += 1
-                g = move.get("gap")
-                d = move.get("disagreement")
-                if g is not None:
-                    all_gaps.append(g)
-                if d is not None:
-                    all_disagreements.append(d)
-                # Track gap-pass-but-disagree-fail (filtered-out obvious moments)
-                if g is not None and g >= 1.0 and d is not None and d < 3:
-                    gap_pass_disagree_fail += 1
+                if move.get("puzzle_found"):
+                    eg = move.get("puzzle_eval_gap", 0)
+                    fp = move.get("puzzle_floor_prob", 0)
+                    if eg:
+                        all_eval_gaps.append(eg)
+                    all_floor_probs.append(fp)
                 if move.get("emergency_mode"):
                     emergency_moves += 1
 
     num_games = len(games)
-    avg_critical = total_critical / num_games if num_games else 0
-    solve_rate = total_found / total_critical * 100 if total_critical else 0
+    avg_puzzles = total_puzzles / num_games if num_games else 0
+    solve_rate = total_solved / total_puzzles * 100 if total_puzzles else 0
     avg_length = sum(game_lengths) / len(game_lengths) if game_lengths else 0
 
     print(f"\n  Results: {wins}W / {draws}D / {losses}L")
     print(f"  Win rate: {wins / num_games * 100:.0f}%")
     print(f"  Avg game length: {avg_length:.0f} moves")
-    print(f"\n  Critical Moments:")
-    print(f"    Avg per game: {avg_critical:.1f} (target: 4-8)")
-    print(f"    Total: {total_critical}")
-    print(f"    Opponent found: {total_found} ({solve_rate:.0f}%) (target: 40-60%)")
+    print(f"\n  Puzzles:")
+    print(f"    Avg per game: {avg_puzzles:.1f} (target: 3-4)")
+    print(f"    Total: {total_puzzles}")
+    print(f"    Opponent solved: {total_solved} ({solve_rate:.0f}%)")
     print(f"    Total eval cost of misses: {total_eval_cost:.1f} pawns")
+    print(f"    Mate puzzles: {mate_puzzles}")
+    if puzzle_types:
+        print(f"    Type breakdown: {dict(puzzle_types)}")
 
     # Emergency stats
     if total_sf_moves > 0:
@@ -593,22 +601,15 @@ def _print_opponent_report(games):
         non_top = sum(1 for r in all_ranks if r > 0)
         print(f"    Non-#1 moves: {non_top}/{len(all_ranks)} ({non_top / len(all_ranks) * 100:.1f}%)")
 
-    # Gap histogram (move 1 vs move 2)
-    if all_gaps:
-        print(f"\n  Move 1 vs Move 2 Gap Distribution:")
-        _print_histogram(all_gaps, bucket_size=0.2, label="pawns")
+    # Eval gap distribution for puzzles
+    if all_eval_gaps:
+        print(f"\n  Puzzle Eval Gap Distribution:")
+        _print_histogram(all_eval_gaps, bucket_size=0.5, label="pawns")
 
-    # Disagreement stats
-    if all_disagreements:
-        print(f"\n  Depth Disagreement Distribution (deep best move rank at shallow depth):")
-        disagree_counter = Counter(all_disagreements)
-        for d in sorted(disagree_counter.keys()):
-            count = disagree_counter[d]
-            pct = count / len(all_disagreements) * 100
-            bar = "#" * int(pct / 2)
-            print(f"    Rank {d}: {count:>4} ({pct:>5.1f}%) {bar}")
-        if gap_pass_disagree_fail > 0:
-            print(f"\n    Filtered out {gap_pass_disagree_fail} moments (gap>=1.0 but disagreement<3 = obvious)")
+    # Floor probability distribution
+    if all_floor_probs:
+        print(f"\n  Floor Probability Distribution (how often floor finds correct move):")
+        _print_histogram(all_floor_probs, bucket_size=0.05, label="")
 
 
 
@@ -632,88 +633,79 @@ def _print_histogram(values, bucket_size=0.1, label=""):
 
 
 def _print_top_criticality(all_games):
-    """Find and print the top 10 highest-gap positions (most critical)."""
+    """Find and print the top 10 highest-scoring puzzle positions."""
     positions = []
     for game in all_games:
         opponent = game.get("metadata", {}).get("opponent", "?")
         for move in game.get("moves", []):
-            if move.get("side") == "stonefish" and move.get("was_flagged"):
+            if move.get("side") == "stonefish" and move.get("puzzle_found"):
                 positions.append({
                     "opponent": opponent,
                     "move_number": move.get("move_number", 0),
                     "move": move.get("stonefish_move", "?"),
-                    "gap": move.get("gap", 0),
-                    "disagreement": move.get("disagreement", 0),
-                    "nettlesomeness": move.get("nettlesomeness_score", 0),
+                    "puzzle_type": move.get("puzzle_type", "?"),
+                    "eval_gap": move.get("puzzle_eval_gap", 0),
+                    "floor_prob": move.get("puzzle_floor_prob", 0),
+                    "disagreement": move.get("puzzle_disagreement", "?"),
+                    "score": move.get("puzzle_score", 0),
                 })
 
-    positions.sort(key=lambda x: x["gap"], reverse=True)
+    positions.sort(key=lambda x: x["score"], reverse=True)
 
-    print(f"\n  Found {len(positions)} flagged positions total.\n")
+    print(f"\n  Found {len(positions)} puzzle positions total.\n")
     for i, p in enumerate(positions[:10]):
         print(f"  {i+1}. vs {p['opponent']} move {p['move_number']}: "
-              f"{p['move']} (gap={p['gap']:.2f}, "
-              f"disagree={p['disagreement']}, "
-              f"nettl={p['nettlesomeness']:.2f})")
+              f"{p['move']} ({p['puzzle_type']}, "
+              f"eval_gap={p['eval_gap']:.2f}, "
+              f"floor={p['floor_prob']:.0%}, "
+              f"tiers={p['disagreement']}, "
+              f"score={p['score']:.2f})")
 
 
 def _print_recommendations(all_games):
     """Generate tuning recommendations based on calibration data."""
-    total_critical = 0
-    total_found = 0
+    total_puzzles = 0
+    total_solved = 0
     num_games = len(all_games)
-    all_gaps = []
 
     for game in all_games:
         summary = game.get("summary", {})
-        total_critical += summary.get("critical_moments_created", 0)
-        total_found += summary.get("critical_moments_found", 0)
-        for move in game.get("moves", []):
-            if move.get("side") == "stonefish":
-                g = move.get("gap")
-                if g is not None:
-                    all_gaps.append(g)
+        total_puzzles += summary.get("puzzles_created", 0)
+        total_solved += summary.get("puzzles_solved", 0)
 
-    avg_critical = total_critical / num_games if num_games else 0
-    solve_rate = total_found / total_critical * 100 if total_critical else 0
+    avg_puzzles = total_puzzles / num_games if num_games else 0
+    solve_rate = total_solved / total_puzzles * 100 if total_puzzles else 0
 
     print()
 
-    # Critical moment frequency (target: 2-4 per game with new gap-based system)
-    if avg_critical < 2:
-        print(f"  * Critical moments avg {avg_critical:.1f}/game (below target 2-4).")
-        print(f"    -> Consider LOWERING gap_threshold (currently 1.0)")
-        print(f"       Try 0.8 to flag more positions as critical.")
-    elif avg_critical > 6:
-        print(f"  * Critical moments avg {avg_critical:.1f}/game (above target 2-4).")
-        print(f"    -> Consider RAISING gap_threshold (currently 1.0)")
-        print(f"       Try 1.2 to be more selective about critical moments.")
+    # Puzzle frequency (target: 3-4 per game)
+    if avg_puzzles < 2:
+        print(f"  * Puzzles avg {avg_puzzles:.1f}/game (below target 3-4).")
+        print(f"    -> Consider LOWERING puzzle_eval_threshold (currently 1.0)")
+        print(f"       Try 0.7 to detect more puzzles.")
+        print(f"    -> Or increase max_lookahead to search deeper.")
+    elif avg_puzzles > 6:
+        print(f"  * Puzzles avg {avg_puzzles:.1f}/game (above target 3-4).")
+        print(f"    -> Consider RAISING puzzle_eval_threshold")
+        print(f"       Try 1.2 to be more selective.")
     else:
-        print(f"  * Critical moments avg {avg_critical:.1f}/game -- IN TARGET RANGE (2-4)")
+        print(f"  * Puzzles avg {avg_puzzles:.1f}/game -- IN TARGET RANGE (3-4)")
 
-    # Solve rate (target: 20-40% — these are hard by definition)
-    if total_critical > 0:
+    # Solve rate (target: 20-40%)
+    if total_puzzles > 0:
         if solve_rate > 50:
             print(f"\n  * Solve rate {solve_rate:.0f}% (above target 20-40%).")
-            print(f"    -> Positions may be too easy. Consider RAISING gap_threshold")
-            print(f"       so only truly hard positions get flagged.")
+            print(f"    -> Puzzles may be too easy. Raise puzzle_eval_threshold or")
+            print(f"       widen the gap between Floor and Stretch tiers.")
         elif solve_rate < 15:
             print(f"\n  * Solve rate {solve_rate:.0f}% (below target 20-40%).")
-            print(f"    -> Positions may be too hard. Consider LOWERING gap_threshold")
-            print(f"       or check if opponent is much weaker than expected.")
+            print(f"    -> Puzzles may be too hard. Lower puzzle_eval_threshold or")
+            print(f"       bring Stretch tier closer to Floor tier.")
         else:
             print(f"\n  * Solve rate {solve_rate:.0f}% -- IN TARGET RANGE (20-40%)")
 
-    # Gap distribution insight
-    if all_gaps:
-        median_gap = sorted(all_gaps)[len(all_gaps) // 2]
-        print(f"\n  * Median move 1 vs move 2 gap: {median_gap:.2f} pawns")
-        if median_gap < 0.3:
-            print(f"    -> Most positions have small gaps. Stonefish may not be")
-            print(f"       creating enough 'one right answer' positions.")
-            print(f"       Try RAISING max_eval_cost to allow bolder play.")
-
     print(f"\n  NOTE: These are recommendations only. Review the data and decide.")
+    print(f"  Use --elo-preset to auto-configure tiers for a target rating.")
     print(f"  All parameters are in stonefish/config.py (StonefishConfig).")
 
 
@@ -736,27 +728,27 @@ def main():
     parser.add_argument("--debug", action="store_true",
                         help="Enable debug logging (verbose event tracing)")
 
-    # Stonefish config overrides
+    # Elo preset (configures everything)
+    parser.add_argument("--elo-preset", type=int, default=None,
+                        help="Elo preset (500/750/1000/1250/1500/1750/2000)")
+
+    # Individual overrides
+    parser.add_argument("--floor-rating", type=int, default=None)
+    parser.add_argument("--stretch-rating", type=int, default=None)
+    parser.add_argument("--reach-rating", type=int, default=None)
+    parser.add_argument("--puzzle-eval-threshold", type=float, default=None)
+    parser.add_argument("--soft-eval-threshold", type=float, default=None)
+    parser.add_argument("--max-mate-depth", type=int, default=None)
+    parser.add_argument("--generosity", type=float, default=None)
+    parser.add_argument("--max-lookahead", type=int, default=None)
+    parser.add_argument("--enable-positive", action="store_true", default=None)
+    parser.add_argument("--no-positive", action="store_true", default=False)
+
+    # Engine config
     parser.add_argument("--deep-depth", type=int, default=12)
     parser.add_argument("--base-depth", type=int, default=6)
-    parser.add_argument("--band", type=int, default=1,
-                        help="Target band — only rank 0 counts as found (default: 1)")
-    parser.add_argument("--gap-threshold", type=float, default=1.0,
-                        help="Min gap between opponent's move 1 and move 2 to flag critical (default: 1.0)")
-    parser.add_argument("--shallow-comparison-depth", type=int, default=2,
-                        help="Depth for 'what looks obvious' check (default: 2)")
-    parser.add_argument("--disagreement-threshold", type=int, default=3,
-                        help="Deep best move must rank this or worse at shallow depth to flag (default: 3)")
-    parser.add_argument("--disagreement-bonus", type=float, default=0.5,
-                        help="Multiplier for depth disagreement bonus in nettlesomeness (default: 0.5)")
-    parser.add_argument("--cooldown", type=int, default=3,
-                        help="Critical moment cooldown in moves (default: 3)")
-    parser.add_argument("--emergency-clock", type=int, default=60,
-                        help="Below this many seconds, skip deep pass (default: 60)")
-    parser.add_argument("--max-search-depth", type=int, default=3,
-                        help="Max chain depth: 1=immediate, 2=two-move, 3=full (default: 3)")
-    parser.add_argument("--opening-book-moves", type=int, default=5,
-                        help="Play Stockfish top move for first N moves (default: 5)")
+    parser.add_argument("--emergency-clock", type=int, default=60)
+    parser.add_argument("--opening-book-moves", type=int, default=5)
     args = parser.parse_args()
 
     if args.debug:
@@ -766,29 +758,51 @@ def main():
         analyze_calibration_logs(args.analyze)
         return
 
+    # Build config: start with defaults, apply preset, then individual overrides
     config = StonefishConfig(
         deep_depth=args.deep_depth,
         base_depth=args.base_depth,
-        target_band=args.band,
-        gap_threshold=args.gap_threshold,
-        shallow_comparison_depth=args.shallow_comparison_depth,
-        disagreement_threshold=args.disagreement_threshold,
-        disagreement_bonus_multiplier=args.disagreement_bonus,
-        critical_cooldown_moves=args.cooldown,
         emergency_clock_seconds=args.emergency_clock,
-        max_search_depth=args.max_search_depth,
         opening_book_moves=args.opening_book_moves,
     )
 
-    print(f"Stonefish Calibration")
+    if args.elo_preset is not None:
+        apply_preset(config, args.elo_preset)
+
+    # Individual overrides
+    if args.floor_rating is not None:
+        config.floor_rating = args.floor_rating
+    if args.stretch_rating is not None:
+        config.stretch_rating = args.stretch_rating
+    if args.reach_rating is not None:
+        config.reach_rating = args.reach_rating
+    if args.puzzle_eval_threshold is not None:
+        config.puzzle_eval_threshold = args.puzzle_eval_threshold
+    if args.soft_eval_threshold is not None:
+        config.soft_puzzle_eval_threshold = args.soft_eval_threshold
+    if args.max_mate_depth is not None:
+        config.max_mate_depth = args.max_mate_depth
+    if args.generosity is not None:
+        config.puzzle_generosity = args.generosity
+    if args.max_lookahead is not None:
+        config.max_lookahead = args.max_lookahead
+    if args.enable_positive is not None:
+        config.enable_positive_puzzles = True
+    if args.no_positive:
+        config.enable_positive_puzzles = False
+
+    print(f"Stonefish Calibration (Three-Tier Maia Puzzle Detector)")
     print(f"  Opponents: {', '.join(args.opponents)}")
     print(f"  Games per opponent: {args.games}")
-    print(f"  Config: deep={config.deep_depth}, base={config.base_depth}, "
-          f"band={config.target_band}, gap_threshold={config.gap_threshold}, "
-          f"disagree={config.disagreement_threshold}@depth{config.shallow_comparison_depth}, "
-          f"cooldown={config.critical_cooldown_moves}, "
-          f"search_depth={config.max_search_depth}, "
-          f"opening_book={config.opening_book_moves}")
+    if args.elo_preset:
+        print(f"  Elo preset: {args.elo_preset}")
+    print(f"  Tiers: floor={config.floor_rating}, "
+          f"stretch={config.stretch_rating}, reach={config.reach_rating}")
+    print(f"  Puzzle: eval_threshold={config.puzzle_eval_threshold}, "
+          f"generosity={config.puzzle_generosity}, "
+          f"mate_depth={config.max_mate_depth}, "
+          f"lookahead={config.max_lookahead}")
+    print(f"  Engine: deep={config.deep_depth}, base={config.base_depth}")
     print(f"  Clock: emergency<{config.emergency_clock_seconds}s")
     print(f"  Logs: {args.log_dir}")
     print()

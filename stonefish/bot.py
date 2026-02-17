@@ -1,11 +1,12 @@
 """
-Stonefish Bot — The Main Bot Class
+Stonefish Bot -- The Main Bot Class
 ====================================
-Orchestrates two-pass move selection, adaptive depth, and game state.
+Orchestrates puzzle-based move selection with three-tier Maia detection,
+adaptive depth, mate retry, conversion mode, and game state.
 
 Two interfaces:
-    choose_move(board)      — Simple, backward-compatible with play_game()
-    choose_move_full(board) — Full, returns MoveResult for logging/chat
+    choose_move(board)      -- Simple, backward-compatible with play_game()
+    choose_move_full(board) -- Full, returns MoveResult for logging/chat
 """
 
 import chess
@@ -14,13 +15,15 @@ from typing import Optional
 from .config import StonefishConfig
 from .game_state import StonefishGameState, MoveResult, OpponentMoveResult
 from .scoring import select_stonefish_move, rank_opponent_move
+from .maia import MaiaEngine
 
 
 class StonefishBot:
     """The Stonefish chess bot.
 
-    Plays nettlesome moves using gap-based scoring (find THE move) with
-    two-pass evaluation and adaptive depth tracking.
+    Plays puzzle-creating moves using three-tier Maia disagreement detection.
+    "I don't expect you to play like an engine. I expect you to play like
+    a better version of yourself."
 
     For local play (backward-compatible with play_game):
         bot = StonefishBot(engine, config)
@@ -33,16 +36,25 @@ class StonefishBot:
         bot.notify_opponent_move(board, opponent_move)
     """
 
-    def __init__(self, engine, config: Optional[StonefishConfig] = None):
+    def __init__(self, engine, config: Optional[StonefishConfig] = None,
+                 maia: Optional[MaiaEngine] = None):
         self.engine = engine
         self.config = config or StonefishConfig()
         self._game_state: Optional[StonefishGameState] = None
+        # Maia engine (created lazily if not provided)
+        self._maia = maia
+
+    @property
+    def maia(self) -> MaiaEngine:
+        if self._maia is None:
+            self._maia = MaiaEngine(stockfish_engine=self.engine)
+        return self._maia
 
     @property
     def name(self) -> str:
-        return (f"Stonefish(dd={self.config.deep_depth},"
-                f"bd={self.config.base_depth},"
-                f"tb={self.config.target_band})")
+        return (f"Stonefish(floor={self.config.floor_rating},"
+                f"stretch={self.config.stretch_rating},"
+                f"reach={self.config.reach_rating})")
 
     @property
     def game_state(self) -> Optional[StonefishGameState]:
@@ -53,11 +65,7 @@ class StonefishBot:
         self._game_state = StonefishGameState(self.config, our_color)
 
     def end_game(self, board: Optional[chess.Board] = None) -> Optional[StonefishGameState]:
-        """Clean up and return the game state for logging/analysis.
-
-        If board is provided, infer any remaining opponent move that
-        hasn't been processed yet (e.g., the final move of the game).
-        """
+        """Clean up and return the game state for logging/analysis."""
         if board is not None and self._game_state is not None:
             self._infer_opponent_move(board)
         state = self._game_state
@@ -69,12 +77,10 @@ class StonefishBot:
 
         Auto-initializes game state if needed.
         Infers opponent's last move from board.move_stack.
-        Compatible with play_game() in engine.py.
         """
         if self._game_state is None:
             self.start_game(board.turn)
 
-        # Infer opponent's last move from the board
         self._infer_opponent_move(board)
 
         result = self.choose_move_full(board)
@@ -85,12 +91,6 @@ class StonefishBot:
         """Full interface: returns MoveResult with all analysis data.
 
         Call start_game() first, or let choose_move() auto-init.
-
-        Args:
-            board: Current position (our turn to move)
-            our_clock_seconds: Remaining time on our clock (seconds).
-                If provided and below emergency threshold, switches to
-                fast shallow play to avoid flagging.
         """
         if self._game_state is None:
             self.start_game(board.turn)
@@ -105,13 +105,15 @@ class StonefishBot:
             current_shallow,
             move_number,
             our_clock_seconds=our_clock_seconds,
+            maia=self.maia,
+            game_state=self._game_state,
         )
 
         self._game_state.on_our_move(result)
         return result
 
     def notify_opponent_move(self, board: chess.Board, move: chess.Move):
-        """Analyze the opponent's move and update adaptive depth.
+        """Analyze the opponent's move and update state.
 
         Args:
             board: Position BEFORE the opponent's move (opponent to move)
@@ -120,9 +122,10 @@ class StonefishBot:
         if self._game_state is None:
             return
 
-        was_critical = self._game_state.last_was_critical
+        was_puzzle = self._game_state.last_was_puzzle
+        puzzle_type = self._game_state.last_puzzle_type
+        puzzle_floor_prob = self._game_state.last_puzzle_floor_prob
 
-        # Rank the opponent's actual move
         rank, eval_cost, best_move_san = rank_opponent_move(
             self.engine,
             board,
@@ -131,7 +134,7 @@ class StonefishBot:
             self.config.deep_depth,
         )
 
-        found = rank < self.config.target_band if was_critical else False
+        found = rank < self.config.target_band if was_puzzle else False
 
         try:
             move_san = board.san(move)
@@ -143,21 +146,18 @@ class StonefishBot:
             move_san=move_san,
             move_rank=rank,
             eval_cost=round(eval_cost, 3),
-            was_critical=was_critical,
-            found_critical=found,
+            was_puzzle=was_puzzle,
+            found_puzzle=found,
             best_response_san=best_move_san,
+            puzzle_type=puzzle_type,
+            puzzle_floor_prob=puzzle_floor_prob,
         )
 
         self._game_state.on_opponent_move(opp_result)
         return opp_result
 
     def _infer_opponent_move(self, board: chess.Board):
-        """Detect the opponent's last move from board.move_stack.
-
-        In play_game(), the board is passed with all moves already pushed.
-        We compare the board's move count to our internal tracking to find
-        any new opponent move we haven't analyzed yet.
-        """
+        """Detect the opponent's last move from board.move_stack."""
         if self._game_state is None:
             return
 
@@ -165,17 +165,11 @@ class StonefishBot:
         tracked = self._game_state._total_move_count
 
         if actual_half_moves <= tracked:
-            return  # No new moves to process
+            return
 
-        # There might be one or more unprocessed moves.
-        # In a normal game flow, there should be exactly one: the opponent's last move.
-        # We need the board state BEFORE the opponent's move to analyze it.
         if actual_half_moves > tracked:
-            # The opponent's move is at index `tracked` in the move stack
-            # (since we've tracked `tracked` half-moves so far)
             opponent_move = board.move_stack[tracked]
 
-            # Build the board state at position `tracked` (before opponent's move)
             temp_board = chess.Board()
             for i in range(tracked):
                 temp_board.push(board.move_stack[i])
