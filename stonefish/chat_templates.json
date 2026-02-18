@@ -1,42 +1,86 @@
 {
     "onboarding": [
-        "Good luck! Just so you know how I work \u2014 I don't try to find the best move for me. I try to find the move that forces you into the hardest decision. Sometimes I'll sacrifice a little bit of my position just to put you at a crossroads where one move is right and the rest will cost you. I'll give you a heads up when I think I've found one of those moments. Let's see how you do!"
+        "GL! I create puzzles during the game. Solve them to win. Let's see how you do!",
+        "GL! I'm a puzzle engine \u2014 I hide challenges in my moves. Good luck!"
     ],
-    "moderate_criticality": [
-        "A few moves are fine here, but one is clearly better than the rest.",
-        "Take a moment on this one \u2014 there's a right answer.",
-        "Your move here matters more than usual."
+
+    "negative_puzzle": [
+        "About {pct}% of players at your level find the right move here.",
+        "This one's tricky \u2014 take your time.",
+        "Your move here matters more than usual. Choose carefully.",
+        "I like my last move. Can you see why?"
     ],
-    "high_criticality": [
-        "I think I've put you in a tough spot. Choose carefully!",
-        "This is a big moment. The right move keeps you in this.",
-        "I really like my last move. Can you see why?"
+
+    "positive_puzzle": [
+        "I may have left something here. About {pct}% at your level spot it.",
+        "Sharp eyes might find an opportunity here...",
+        "There's something here if you look for it. Take your time.",
+        "I might have made a mistake. Can you punish it?"
     ],
-    "found_critical": [
+
+    "mate_puzzle": [
+        "There might be a forced checkmate here...",
+        "I think you can end this right now if you calculate carefully.",
+        "The finish line is close. Can you find it?"
+    ],
+
+    "mate_retry": [
+        "Still there if you look for it...",
+        "One more look \u2014 it's close!",
+        "The checkmate hasn't gone away yet."
+    ],
+
+    "found_puzzle": [
         "Nice find!",
-        "That was the move \u2014 well played!",
-        "You got it!",
+        "That was it \u2014 well played!",
+        "You got it! {pct}% at your level miss that.",
         "Exactly right."
     ],
-    "missed_critical": [
-        "Not quite \u2014 but don't worry, we'll go over it after the game.",
-        "That one slipped past you. I'll show you what I was looking for later!",
-        "There was a better one there. I'll break it down after the game.",
-        "Almost! We'll look at this one together afterward."
+
+    "found_mate": [
+        "Checkmate! Great calculation.",
+        "You found it! Beautiful.",
+        "That's the mate. Well done."
     ],
-    "post_game_high_solve": [
-        "GG! I created {n_critical} critical moments and you found {n_found} of them \u2014 nice work!"
+
+    "missed_puzzle": [
+        "Not quite \u2014 we'll review that one after.",
+        "That one slipped by. I'll show you later!",
+        "There was a better move. We'll look at it after the game."
     ],
-    "post_game_mid_solve": [
-        "GG! I created {n_critical} critical moments and you found {n_found}. Tricky game! Those moments are hard to spot in real time \u2014 that's what practice is for. Want another go?"
+
+    "missed_positive": [
+        "I got away with one there! I'll explain after.",
+        "You let me off the hook. We'll review it!",
+        "Lucky escape for me! I'll show you what you missed."
     ],
-    "post_game_low_solve": [
-        "GG! I created {n_critical} critical moments and you found {n_found}. Don't worry \u2014 spotting these in a live game is a skill that takes time. Want to try again?"
+
+    "mate_escaped": [
+        "The moment passed! I had to get out of there.",
+        "I survived! We'll look at how close that was."
     ],
-    "post_game_no_critical": [
-        "GG! That was a quick one \u2014 I didn't find many chances to set traps. Want to play again?"
+
+    "post_game": [
+        "GG! {n_found}/{n_total} puzzles solved. {rating_msg} Rematch?"
     ],
+
+    "post_game_rating_high": [
+        "You handled the pressure well!"
+    ],
+
+    "post_game_rating_mid": [
+        "Solid effort!"
+    ],
+
+    "post_game_rating_low": [
+        "They're hard to spot live \u2014 that's what practice is for."
+    ],
+
+    "post_game_no_puzzles": [
+        "GG! That was a quick one \u2014 I didn't find many chances to set puzzles. Want to play again?"
+    ],
+
     "post_game_miss_detail": [
-        "Move {move_number}: I played {sf_move} to put you in a tough spot. You played {opp_move} \u2014 {best_response} would have been the stronger choice."
+        "Move {move_number}: I played {sf_move}. You played {opp_move} \u2014 {best_response} was stronger."
     ]
 }

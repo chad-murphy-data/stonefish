@@ -4,12 +4,13 @@ Stonefish Chat Engine -- Message Generation
 Generates in-game chat messages and post-game summaries from per-move data.
 Templates are loaded from chat_templates.json for easy editing.
 
-5 triggers, no other messages:
-    1. Game start (onboarding) — always sends
-    2. Stonefish plays critical move (pre-critical alert) — skipped in quiet mode
-    3. Opponent finds critical moment — skipped in quiet mode
-    4. Opponent misses critical moment — skipped in quiet mode
-    5. Game end (post-game summary) — always sends, returns list of messages
+Triggers:
+    1. Game start (onboarding) -- always sends
+    2. Stonefish plays puzzle-creating move (pre-alert) -- skipped in quiet mode
+    3. Opponent finds puzzle -- skipped in quiet mode
+    4. Opponent misses puzzle -- skipped in quiet mode
+    5. Mate retry hint -- skipped in quiet mode
+    6. Game end (post-game summary) -- always sends
 """
 
 import json
@@ -45,91 +46,98 @@ class ChatEngine:
         return self._pick("onboarding")
 
     def on_our_move(self, move_result: MoveResult) -> Optional[str]:
-        """Trigger 2: Pre-critical alert after Stonefish plays a critical move.
+        """Trigger 2: Pre-puzzle alert after Stonefish plays a puzzle-creating move.
 
-        Returns None if position not critical or quiet mode is on.
-        Selects moderate or high tier based on gap vs gap_threshold * high_gap_multiplier.
+        Returns None if no puzzle or quiet mode is on.
+        Selects template based on puzzle type.
         """
         if self.quiet or not self.config.chat_enabled:
             return None
 
-        if not move_result.was_flagged_critical:
+        if not move_result.puzzle_found:
             return None
 
-        high_threshold = self.config.gap_threshold * self.config.high_gap_multiplier
-        if move_result.gap >= high_threshold:
-            return self._pick("high_criticality")
-        else:
-            return self._pick("moderate_criticality")
+        ptype = move_result.puzzle_type
+        pct = int(move_result.puzzle_floor_prob * 100)
+
+        if ptype == "mate":
+            return self._pick_formatted("mate_puzzle", pct=pct)
+        elif ptype == "positive":
+            return self._pick_formatted("positive_puzzle", pct=pct)
+        elif ptype == "negative":
+            return self._pick_formatted("negative_puzzle", pct=pct)
+
+        return None
 
     def on_opponent_move(self, opp_result: OpponentMoveResult) -> Optional[str]:
-        """Triggers 3 & 4: Response after opponent plays on a critical position.
-
-        Returns None if the position wasn't critical or quiet mode is on.
-        Does NOT include pawn cost or reveal best move for misses.
-        """
+        """Triggers 3 & 4: Response after opponent plays on a puzzle position."""
         if self.quiet or not self.config.chat_enabled:
             return None
 
-        if not opp_result.was_critical:
+        if not opp_result.was_puzzle:
             return None
 
-        if opp_result.found_critical:
-            return self._pick("found_critical")
+        ptype = opp_result.puzzle_type
+        pct = int(opp_result.puzzle_floor_prob * 100)
+
+        if opp_result.found_puzzle:
+            if ptype == "mate":
+                return self._pick_formatted("found_mate", pct=pct)
+            else:
+                return self._pick_formatted("found_puzzle", pct=pct)
         else:
-            return self._pick("missed_critical")
+            if ptype == "mate":
+                return self._pick("mate_escaped")
+            elif ptype == "positive":
+                return self._pick("missed_positive")
+            else:
+                return self._pick("missed_puzzle")
+
+    def on_mate_retry(self) -> Optional[str]:
+        """Trigger 5: Hint during mate retry mode."""
+        if self.quiet or not self.config.chat_enabled:
+            return None
+        return self._pick("mate_retry")
 
     def generate_post_game_summary(self, game_state: StonefishGameState) -> List[str]:
-        """Trigger 5: Generate post-game summary as a list of separate messages.
+        """Trigger 6: Generate post-game summary as a list of separate messages.
 
-        Returns a list of strings — each should be sent as a separate chat message
-        with a short delay between them. Always sends regardless of quiet mode.
-
-        Messages:
-            1. Opening line (based on solve rate)
-            2-N. One message per missed critical moment with move breakdown
+        Always sends regardless of quiet mode.
         """
-        critical_moments = [
+        puzzle_moments = [
             (i, opp) for i, opp in enumerate(game_state.opponent_results)
-            if opp.was_critical
+            if opp.was_puzzle
         ]
-        found_count = sum(1 for _, opp in critical_moments if opp.found_critical)
-        critical_count = len(critical_moments)
+        found_count = sum(1 for _, opp in puzzle_moments if opp.found_puzzle)
+        puzzle_count = len(puzzle_moments)
 
         messages: List[str] = []
 
-        if critical_count == 0:
-            messages.append(self._pick("post_game_no_critical"))
+        if puzzle_count == 0:
+            messages.append(self._pick("post_game_no_puzzles"))
             return messages
 
-        # Opening line based on solve rate
-        solve_rate = found_count / critical_count if critical_count > 0 else 0
+        solve_rate = found_count / puzzle_count if puzzle_count > 0 else 0
 
         if solve_rate >= 0.6:
-            header = self._pick_formatted(
-                "post_game_high_solve",
-                n_critical=critical_count,
-                n_found=found_count,
-            )
+            rating_msg = self._pick("post_game_rating_high")
         elif solve_rate >= 0.3:
-            header = self._pick_formatted(
-                "post_game_mid_solve",
-                n_critical=critical_count,
-                n_found=found_count,
-            )
+            rating_msg = self._pick("post_game_rating_mid")
         else:
-            header = self._pick_formatted(
-                "post_game_low_solve",
-                n_critical=critical_count,
-                n_found=found_count,
-            )
+            rating_msg = self._pick("post_game_rating_low")
 
+        header = self._pick_formatted(
+            "post_game",
+            n_found=found_count,
+            n_total=puzzle_count,
+            rating_msg=rating_msg,
+        )
         messages.append(header)
 
-        # Per-missed-moment breakdowns (each as a separate message)
-        for idx, opp in critical_moments:
-            if opp.found_critical:
-                continue  # Only break down misses
+        # Per-missed-puzzle breakdowns
+        for idx, opp in puzzle_moments:
+            if opp.found_puzzle:
+                continue
 
             sf_move = game_state.move_results[idx] if idx < len(game_state.move_results) else None
             if sf_move:

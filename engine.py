@@ -19,7 +19,33 @@ import random
 import time
 from dataclasses import dataclass
 
-STOCKFISH_PATH = r"C:\Users\chadm\AppData\Local\Microsoft\WinGet\Packages\Stockfish.Stockfish_Microsoft.Winget.Source_8wekyb3d8bbwe\stockfish\stockfish-windows-x86-64-avx2.exe"
+import os
+import shutil
+
+def _find_stockfish():
+    """Find the Stockfish binary, checking common locations."""
+    # Environment variable override
+    env_path = os.environ.get("STOCKFISH_PATH")
+    if env_path and os.path.isfile(env_path):
+        return env_path
+    # Common locations
+    candidates = [
+        r"C:\Users\chadm\AppData\Local\Microsoft\WinGet\Packages\Stockfish.Stockfish_Microsoft.Winget.Source_8wekyb3d8bbwe\stockfish\stockfish-windows-x86-64-avx2.exe",
+        "/usr/games/stockfish",
+        "/usr/local/bin/stockfish",
+        "/usr/bin/stockfish",
+    ]
+    for path in candidates:
+        if os.path.isfile(path):
+            return path
+    # Last resort: check PATH
+    found = shutil.which("stockfish")
+    if found:
+        return found
+    # Fall back to the first candidate (will error on open)
+    return candidates[0]
+
+STOCKFISH_PATH = _find_stockfish()
 
 
 @dataclass
