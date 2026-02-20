@@ -34,29 +34,82 @@ from .maia import MaiaEngine, MaiaPrediction, ThreeTierPrediction
 
 
 # ---------------------------------------------------------------------------
-# Helper: material difference check
+# Helper: smart net material difference filter
 # ---------------------------------------------------------------------------
 
-def involves_material_difference(board: chess.Board, move_a: chess.Move, move_b: chess.Move) -> bool:
-    """Quick check: do the two moves involve different captures or material changes?
+PIECE_VALUES = {
+    chess.PAWN: 1.0,
+    chess.KNIGHT: 3.0,
+    chess.BISHOP: 3.0,
+    chess.ROOK: 5.0,
+    chess.QUEEN: 9.0,
+    chess.KING: 0.0,
+}
 
-    Used as a first-cut filter before expensive Stockfish validation.
-    Returns True if either move is a capture, or they target different squares,
-    or one involves a promotion.
+
+def _count_material(board: chess.Board) -> float:
+    """Count material balance from White's perspective."""
+    total = 0.0
+    for square in chess.SQUARES:
+        piece = board.piece_at(square)
+        if piece is None:
+            continue
+        value = PIECE_VALUES.get(piece.piece_type, 0.0)
+        if piece.color == chess.WHITE:
+            total += value
+        else:
+            total -= value
+    return total
+
+
+def net_material_difference(board: chess.Board, move_a: chess.Move, move_b: chess.Move, engine) -> float:
+    """Play out each move through obvious trade sequences, compare net material.
+
+    Instead of just checking "are these captures?", plays each move + Stockfish's
+    low-depth response to resolve trade sequences, then compares material balance.
+    Returns the difference in pawns (positive = move_a leads to more material for
+    the side to move).
+
+    Cost: two Stockfish depth-3 calls (~10ms each) = ~20ms per disagreement.
+    Fast path: if neither move is a capture/promotion and they go to the same
+    square, skip the expensive analysis (net difference is always ~0).
     """
-    a_capture = board.is_capture(move_a)
-    b_capture = board.is_capture(move_b)
+    # Fast path: quiet moves to the same square can't differ materially
+    a_cap = board.is_capture(move_a)
+    b_cap = board.is_capture(move_b)
+    if (not a_cap and not b_cap
+            and not move_a.promotion and not move_b.promotion
+            and move_a.to_square == move_b.to_square):
+        return 0.0
 
-    if a_capture or b_capture:
-        return True
+    sign = 1.0 if board.turn == chess.WHITE else -1.0
 
-    if move_a.promotion or move_b.promotion:
-        return True
+    def material_after_resolution(board, move):
+        sim = board.copy()
+        sim.push(move)
+        if sim.is_game_over():
+            return _count_material(sim) * sign
 
-    if move_a.to_square != move_b.to_square:
-        return True
+        # Let Stockfish play out the obvious response at low depth
+        # Depth 3 is enough to see Nxd5 exd5 Bxd5 type sequences
+        try:
+            info = engine.analyse(sim, chess.engine.Limit(depth=3))
+            pv = info.get("pv", [])
+            for response_move in pv[:3]:
+                if response_move in sim.legal_moves:
+                    sim.push(response_move)
+                    if sim.is_game_over():
+                        break
+                else:
+                    break
+        except Exception:
+            pass
 
-    return False
+        return _count_material(sim) * sign
+
+    mat_a = material_after_resolution(board, move_a)
+    mat_b = material_after_resolution(board, move_b)
+    return mat_a - mat_b
 
 
 # ---------------------------------------------------------------------------
@@ -72,6 +125,10 @@ def _eval_after_move(engine, board: chess.Board, move: chess.Move, depth: int) -
     sign = 1.0 if board.turn == chess.WHITE else -1.0
 
     board.push(move)
+    if board.is_game_over():
+        is_mate = board.is_checkmate()
+        board.pop()
+        return -100.0 * sign if is_mate else 0.0
     top = get_top_moves(engine, board, num_moves=1, depth=depth)
     board.pop()
 
@@ -98,6 +155,79 @@ def _get_mate_score(engine, board: chess.Board, depth: int) -> Optional[int]:
     return None
 
 
+def _maia_rollout_eval(
+    board: chess.Board,
+    first_move: chess.Move,
+    maia: 'MaiaEngine',
+    engine,
+    floor_rating: int,
+    rollout_depth: int,
+) -> float:
+    """Push first_move, then play out rollout_depth half-moves with Maia
+    at floor_rating for both sides. Return Stockfish's eval of the
+    final position from the perspective of the side that played first_move.
+
+    This captures how initial differences compound with human-level play.
+    A 0.1 pawn gap at move 1 might become 2.0 by move 4 because the
+    "worse" line generates tactics that Maia-at-floor can't navigate.
+
+    Speed optimization: rollout Maia calls use a low rating cap (min of
+    floor_rating and 1100) so Stockfish simulated depth stays <= 6.
+    The final eval uses depth 8 (sufficient after rollout noise reduction).
+    """
+    sim_board = board.copy()
+    sim_board.push(first_move)
+
+    # If the move ends the game, return a large eval (mate)
+    if sim_board.is_game_over():
+        if sim_board.is_checkmate():
+            return -100.0  # Side to move is mated = great for us
+        return 0.0  # Stalemate/draw
+
+    # Cap the rollout rating to keep simulated Maia calls fast (depth <= 6).
+    # We just need plausible human moves, not perfectly calibrated ones.
+    rollout_rating = min(floor_rating, 1100)
+
+    for _ in range(rollout_depth):
+        if sim_board.is_game_over():
+            break
+        maia_pred = maia.predict(sim_board, rollout_rating)
+        if maia_pred.top_move in sim_board.legal_moves:
+            sim_board.push(maia_pred.top_move)
+        else:
+            break
+
+    # Depth 8 is sufficient — the rollout provides noise reduction already.
+    try:
+        info = engine.analyse(sim_board, chess.engine.Limit(depth=8))
+        score = info.get("score")
+        if score is None:
+            return 0.0
+        relative = score.relative
+        if relative.is_mate():
+            return relative.mate() * 100.0  # Large value for mate
+        cp = relative.score(mate_score=10000)
+        if cp is None:
+            return 0.0
+        eval_score = cp / 100.0
+    except Exception:
+        return 0.0
+
+    # The eval is from the perspective of the side to move in sim_board.
+    # We want it from the perspective of the side that played first_move.
+    # first_move was played by board.turn (before push). After push, it's
+    # the opponent's turn. After rollout_depth moves, the side alternates.
+    # If rollout_depth is even, sim_board.turn == opponent of first_move player.
+    # If rollout_depth is odd, sim_board.turn == first_move player.
+    # Since relative eval is from sim_board.turn's perspective, we may need to flip.
+    first_move_is_white = board.turn == chess.WHITE
+    sim_is_white_turn = sim_board.turn == chess.WHITE
+    if first_move_is_white != sim_is_white_turn:
+        eval_score = -eval_score
+
+    return eval_score
+
+
 def _is_capturable_in_1(engine, board: chess.Board, move: chess.Move) -> bool:
     """After we play 'move', can the opponent win material in one move?
 
@@ -106,6 +236,9 @@ def _is_capturable_in_1(engine, board: chess.Board, move: chess.Move) -> bool:
     After they play it, we check if the reply wins material.
     """
     board.push(move)
+    if board.is_game_over():
+        board.pop()
+        return False
     info = engine.analyse(board, chess.engine.Limit(depth=1))
     score = info.get("score")
     board.pop()
@@ -185,6 +318,10 @@ def detect_puzzle(
     """
     from .game_state import PuzzleResult
 
+    # Guard: if the position is terminal, no puzzle can exist
+    if board.is_game_over():
+        return None
+
     # Step 1: Three Maia calls
     tiers = maia.predict_three_tier(
         board,
@@ -209,28 +346,58 @@ def detect_puzzle(
     if not disagreements:
         return None
 
-    # Step 3: Material first-cut filter
+    # Step 3: Smart material first-cut filter
+    # Play out each move + opponent's best recapture (Stockfish depth 3),
+    # then compare NET material balance. Only flag as material-relevant if
+    # the net material after trades resolve is actually different (>= 0.3 pawns).
     threshold = get_eval_threshold(config, move_number, puzzles_found)
 
     filtered = []
     for dtype, worse_move, better_move in disagreements:
-        if involves_material_difference(board, worse_move, better_move):
+        net_diff = net_material_difference(board, worse_move, better_move, engine)
+        if abs(net_diff) >= 0.3:
             filtered.append((dtype, worse_move, better_move))
 
     if not filtered:
+        # No real material differences — allow non-material puzzles past the
+        # adaptive threshold move
         if move_number >= config.soft_puzzle_move_threshold:
             filtered = disagreements
         else:
             return None
 
-    # Step 4: Stockfish validation
+    # Step 4: Maia rollout validation
+    # Instead of checking the immediate Stockfish eval after one move, roll out
+    # each line for several moves using Maia at Floor rating for both sides,
+    # THEN check Stockfish eval. This captures how initial differences compound.
     best_puzzles = []
-    depth = config.deep_depth
+    rollout_depth = config.rollout_depth
 
     for dtype, worse_move, better_move in filtered:
-        worse_eval = _eval_after_move(engine, board, worse_move, depth)
-        better_eval = _eval_after_move(engine, board, better_move, depth)
+        worse_eval = _maia_rollout_eval(
+            board, worse_move, maia, engine,
+            config.floor_rating, rollout_depth,
+        )
+        better_eval = _maia_rollout_eval(
+            board, better_move, maia, engine,
+            config.floor_rating, rollout_depth,
+        )
         eval_gap = worse_eval - better_eval  # Positive = worse_move costs pawns
+
+        # Optionally average multiple rollouts for reliability
+        if config.rollout_averaging > 1:
+            for _ in range(config.rollout_averaging - 1):
+                worse_eval += _maia_rollout_eval(
+                    board, worse_move, maia, engine,
+                    config.floor_rating, rollout_depth,
+                )
+                better_eval += _maia_rollout_eval(
+                    board, better_move, maia, engine,
+                    config.floor_rating, rollout_depth,
+                )
+            worse_eval /= config.rollout_averaging
+            better_eval /= config.rollout_averaging
+            eval_gap = worse_eval - better_eval
 
         if eval_gap < threshold:
             continue
@@ -310,6 +477,11 @@ def detect_positive_puzzle(
 
     board_before.push(candidate_move)
 
+    # Guard: if the position is terminal, no puzzle can exist
+    if board_before.is_game_over():
+        board_before.pop()
+        return None
+
     # Run three tiers from opponent's perspective
     tiers = maia.predict_three_tier(
         board_before,
@@ -328,7 +500,7 @@ def detect_positive_puzzle(
         return None
 
     threshold = get_eval_threshold(config, move_number, puzzles_found)
-    depth = config.deep_depth
+    rollout_depth = config.rollout_depth
 
     best_puzzle = None
 
@@ -339,8 +511,14 @@ def detect_positive_puzzle(
         if worse_move == better_move:
             continue
 
-        worse_eval = _eval_after_move(engine, board_before, worse_move, depth)
-        better_eval = _eval_after_move(engine, board_before, better_move, depth)
+        worse_eval = _maia_rollout_eval(
+            board_before, worse_move, maia, engine,
+            config.floor_rating, rollout_depth,
+        )
+        better_eval = _maia_rollout_eval(
+            board_before, better_move, maia, engine,
+            config.floor_rating, rollout_depth,
+        )
         eval_gap = better_eval - worse_eval
 
         if eval_gap < threshold:
@@ -411,6 +589,11 @@ def detect_mate_puzzle(
 
     board.push(our_move)
 
+    # Guard: if the position is terminal (checkmate/stalemate), skip
+    if board.is_game_over():
+        board.pop()
+        return None
+
     mate_dist = _get_mate_score(engine, board, depth=config.deep_depth)
 
     if mate_dist is None or mate_dist <= 0 or mate_dist > config.max_mate_depth:
@@ -470,6 +653,9 @@ def find_mate_preserving_move(
     candidates = []
     for move in board.legal_moves:
         board.push(move)
+        if board.is_game_over():
+            board.pop()
+            continue
         info = engine.analyse(board, chess.engine.Limit(depth=current_mate_distance + 2))
         score = info.get("score")
         if score is not None:
@@ -731,15 +917,19 @@ def select_stonefish_move(
             continue
 
         board.push(cand_move)
-        positions_screened += 1
 
-        puzzle = detect_puzzle(
-            board, maia, engine, config,
-            our_move=cand_move,
-            eval_cost_to_create=max(0.0, eval_cost),
-            move_number=move_number,
-            puzzles_found=puzzles_found,
-        )
+        if not board.is_game_over():
+            positions_screened += 1
+
+            puzzle = detect_puzzle(
+                board, maia, engine, config,
+                our_move=cand_move,
+                eval_cost_to_create=max(0.0, eval_cost),
+                move_number=move_number,
+                puzzles_found=puzzles_found,
+            )
+        else:
+            puzzle = None
 
         board.pop()
 

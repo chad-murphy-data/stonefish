@@ -741,6 +741,10 @@ def main():
     parser.add_argument("--max-mate-depth", type=int, default=None)
     parser.add_argument("--generosity", type=float, default=None)
     parser.add_argument("--max-lookahead", type=int, default=None)
+    parser.add_argument("--rollout-depth", type=int, default=None,
+                        help="Half-moves for Maia rollout validation (default: from preset)")
+    parser.add_argument("--rollout-averaging", type=int, default=None,
+                        help="Number of rollouts to average (1=fast, 2-3=more reliable)")
     parser.add_argument("--enable-positive", action="store_true", default=None)
     parser.add_argument("--no-positive", action="store_true", default=False)
 
@@ -786,6 +790,10 @@ def main():
         config.puzzle_generosity = args.generosity
     if args.max_lookahead is not None:
         config.max_lookahead = args.max_lookahead
+    if args.rollout_depth is not None:
+        config.rollout_depth = args.rollout_depth
+    if args.rollout_averaging is not None:
+        config.rollout_averaging = args.rollout_averaging
     if args.enable_positive is not None:
         config.enable_positive_puzzles = True
     if args.no_positive:
@@ -802,6 +810,8 @@ def main():
           f"generosity={config.puzzle_generosity}, "
           f"mate_depth={config.max_mate_depth}, "
           f"lookahead={config.max_lookahead}")
+    print(f"  Rollout: depth={config.rollout_depth}, "
+          f"averaging={config.rollout_averaging}")
     print(f"  Engine: deep={config.deep_depth}, base={config.base_depth}")
     print(f"  Clock: emergency<{config.emergency_clock_seconds}s")
     print(f"  Logs: {args.log_dir}")

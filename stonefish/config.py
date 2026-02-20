@@ -25,6 +25,10 @@ class StonefishConfig:
     soft_puzzle_move_threshold: int = 15     # Move number to start lowering threshold
     puzzles_before_softening: int = 1        # If fewer puzzles by soft_puzzle_move_threshold, soften
 
+    # --- Maia rollout validation ---
+    rollout_depth: int = 6                # Half-moves to simulate (6 = 3 full moves of Maia vs Maia)
+    rollout_averaging: int = 1            # Number of rollouts to average (1 = single, 2-3 = more reliable)
+
     # --- Mate puzzles ---
     max_mate_depth: int = 4               # Max mate-in-N to flag as puzzle
     mate_retry_budget: Dict[int, int] = field(

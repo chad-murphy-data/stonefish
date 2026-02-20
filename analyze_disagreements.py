@@ -20,7 +20,7 @@ from collections import Counter, defaultdict
 from engine import STOCKFISH_PATH, get_top_moves
 from stonefish.maia import MaiaEngine
 from stonefish.presets import ELO_PRESETS
-from stonefish.scoring import involves_material_difference
+from stonefish.scoring import net_material_difference
 
 
 def analyze_preset(engine, maia, elo, preset, num_games=2):
@@ -84,10 +84,10 @@ def analyze_preset(engine, maia, elo, preset, num_games=2):
                     if len({floor_move, stretch_move, reach_move}) == 3:
                         stats["all_three_differ"] += 1
 
-                    # Check material relevance for the most important disagreement
-                    if fvs and involves_material_difference(board, floor_move, stretch_move):
+                    # Check material relevance using smart net material filter
+                    if fvs and abs(net_material_difference(board, floor_move, stretch_move, engine)) >= 0.3:
                         stats["material_relevant"] += 1
-                    elif fvr and involves_material_difference(board, floor_move, reach_move):
+                    elif fvr and abs(net_material_difference(board, floor_move, reach_move, engine)) >= 0.3:
                         stats["material_relevant"] += 1
 
                     # Floor's probability on the better move

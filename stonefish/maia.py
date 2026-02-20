@@ -56,14 +56,21 @@ class MaiaEngine:
     with a full probability distribution over legal moves.
     """
 
-    def __init__(self, stockfish_engine=None, maia_models=None):
+    def __init__(self, stockfish_engine=None, maia_models=None,
+                 max_simulated_depth=None, multi_pv=5):
         """
         Args:
             stockfish_engine: chess.engine.SimpleEngine for fallback/high-tier
             maia_models: Optional dict mapping rating -> loaded model
+            max_simulated_depth: Cap on Stockfish depth for simulated Maia calls.
+                None = no cap (production). Set to 5-6 for fast live viewing.
+            multi_pv: Number of MultiPV lines for simulated predictions.
+                5 = fast (viewer), 8 = richer distributions (Lichess).
         """
         self.engine = stockfish_engine
         self.maia_models = maia_models or {}
+        self.max_simulated_depth = max_simulated_depth
+        self.multi_pv = multi_pv
 
     def predict(self, board: chess.Board, rating: Optional[int]) -> MaiaPrediction:
         """Get a move prediction for a position at a given rating level.
@@ -108,7 +115,19 @@ class MaiaEngine:
         sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         from engine import get_top_moves
 
-        top = get_top_moves(self.engine, board, num_moves=1, depth=12)
+        # Terminal position guard
+        if board.is_game_over():
+            dummy_move = chess.Move.null()
+            return MaiaPrediction(
+                top_move=dummy_move,
+                distribution={dummy_move: 1.0},
+                rating=None,
+            )
+
+        sf_depth = 12
+        if self.max_simulated_depth is not None:
+            sf_depth = min(sf_depth, self.max_simulated_depth)
+        top = get_top_moves(self.engine, board, num_moves=1, depth=sf_depth)
         if not top:
             # Fallback to any legal move
             move = list(board.legal_moves)[0]
@@ -193,9 +212,21 @@ class MaiaEngine:
 
         # Map rating to simulated depth
         depth = max(2, min(12, 2 + (rating - 500) // 150))
+        if self.max_simulated_depth is not None:
+            depth = min(depth, self.max_simulated_depth)
 
-        # Get more moves for distribution
-        num_moves = min(10, len(list(board.legal_moves)))
+        # MultiPV count: use self.multi_pv but cap to legal moves, min 1
+        legal_count = len(list(board.legal_moves))
+        if legal_count == 0:
+            # Terminal position (checkmate/stalemate) -- return a dummy prediction
+            # This can happen when puzzle detection pushes a move that ends the game
+            dummy_move = chess.Move.null()
+            return MaiaPrediction(
+                top_move=dummy_move,
+                distribution={dummy_move: 1.0},
+                rating=rating,
+            )
+        num_moves = max(1, min(self.multi_pv, legal_count))
         top = get_top_moves(self.engine, board, num_moves=num_moves, depth=depth)
 
         if not top:

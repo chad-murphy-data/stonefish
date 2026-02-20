@@ -18,7 +18,7 @@ from stonefish.config import StonefishConfig
 from stonefish.scoring import (
     detect_puzzle, detect_positive_puzzle, detect_mate_puzzle,
     rank_opponent_move, get_difficulty_label, get_eval_threshold,
-    involves_material_difference, _score_puzzle_raw,
+    net_material_difference, _score_puzzle_raw,
 )
 from stonefish.adaptive import AdaptiveDepthTracker
 from stonefish.bot import StonefishBot

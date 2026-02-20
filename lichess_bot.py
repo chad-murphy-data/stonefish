@@ -1,18 +1,18 @@
 """
 Stonefish Lichess Bot
 =====================
-Connects the Stonefish engine to Lichess for live games with chat
-and critical moment detection.
+Connects the Stonefish engine to Lichess for live games with
+three-tier Maia puzzle detection, chat alerts, and adaptive play.
 
 Usage:
-    # Listen for challenges and play games
-    python lichess_bot.py
+    # Listen for challenges at ELO 500 (your rating)
+    python lichess_bot.py --elo 500
 
     # Challenge a specific player
-    python lichess_bot.py --challenge USERNAME
+    python lichess_bot.py --elo 500 --challenge USERNAME
 
-    # With custom config
-    python lichess_bot.py --base-depth 8 --deep-depth 18 --band 3
+    # With custom time control
+    python lichess_bot.py --elo 500 --challenge USERNAME --clock 15+10
 
 Setup:
     1. Create a Lichess BOT account (or upgrade an existing one)
@@ -40,8 +40,10 @@ from typing import Optional
 from engine import STOCKFISH_PATH
 from stonefish.config import StonefishConfig
 from stonefish.bot import StonefishBot
+from stonefish.maia import MaiaEngine
 from stonefish.logger import StonefishLogger
 from stonefish.chat import ChatEngine
+from stonefish.presets import apply_preset
 
 logging.basicConfig(
     level=logging.INFO,
@@ -114,13 +116,24 @@ class GameHandler:
         self.our_color = None
         self.opponent_name = "unknown"
 
-        # Per-game instances
+        # Per-game instances -- Maia and bot are created with a temporary
+        # engine reference; we swap in the real pooled engine for each move.
         self.bot = StonefishBot(engine=None, config=config)
+        self.maia = None  # Created lazily on first engine acquire
         self.logger = StonefishLogger()
         self.chat = ChatEngine(config)
 
         # Track which moves we've already processed
         self._last_processed_moves = 0
+
+    def _ensure_maia(self, engine):
+        """Lazily create the Maia engine on first use."""
+        if self.maia is None:
+            self.maia = MaiaEngine(stockfish_engine=engine, multi_pv=8)
+            self.bot._maia = self.maia
+        else:
+            # Update Maia's engine ref to the currently acquired pooled engine
+            self.maia.engine = engine
 
     def run(self):
         """Main game loop -- stream events and respond."""
@@ -154,26 +167,37 @@ class GameHandler:
         log.info(f"Game {self.game_id}: handler finished")
 
     def _handle_game_full(self, event):
-        """Process the initial gameFull event."""
+        """Process the initial gameFull event.
+
+        On reconnect, the stream re-sends gameFull. We detect this by
+        checking if our_color is already set and skip re-initialization
+        to preserve game state and avoid re-sending the opening message.
+        """
         white = event.get("white", {})
         black = event.get("black", {})
         white_id = white.get("id", white.get("name", ""))
         black_id = black.get("id", black.get("name", ""))
 
+        is_reconnect = self.our_color is not None
+
         self.our_color = chess.WHITE if white_id == self.bot_id else chess.BLACK
         self.opponent_name = black_id if self.our_color == chess.WHITE else white_id
         color_str = "white" if self.our_color == chess.WHITE else "black"
-        log.info(f"Game {self.game_id}: {white_id} (W) vs {black_id} (B) -- we are {color_str}")
 
-        # Initialize per-game state
-        self.bot.start_game(self.our_color)
-        self.logger.start_game(self.config, self.our_color, self.opponent_name)
+        if is_reconnect:
+            log.info(f"Game {self.game_id}: reconnected -- we are {color_str} (state preserved)")
+        else:
+            log.info(f"Game {self.game_id}: {white_id} (W) vs {black_id} (B) -- we are {color_str}")
 
-        # Send onboarding message
-        onboarding = self.chat.on_game_start()
-        self._send_chat(onboarding)
+            # Initialize per-game state (only on first connect)
+            self.bot.start_game(self.our_color)
+            self.logger.start_game(self.config, self.our_color, self.opponent_name)
 
-        # Apply initial state
+            # Send onboarding message
+            onboarding = self.chat.on_game_start()
+            self._send_chat(onboarding)
+
+        # Apply initial state (always -- catches up on any moves we missed)
         state = event.get("state", {})
         self._apply_state(state)
 
@@ -221,6 +245,7 @@ class GameHandler:
 
                     with self.pool.acquire() as engine:
                         self.bot.engine = engine
+                        self._ensure_maia(engine)
                         opp_result = self.bot.notify_opponent_move(temp_board, move)
                         self.bot.engine = None
 
@@ -241,12 +266,30 @@ class GameHandler:
         move_num = self.board.fullmove_number
         log.info(f"Game {self.game_id}: move {move_num}, thinking...")
 
-        start = time.time()
-        with self.pool.acquire() as engine:
-            self.bot.engine = engine
-            result = self.bot.choose_move_full(self.board)
-            self.bot.engine = None
-        elapsed = time.time() - start
+        try:
+            start = time.time()
+            with self.pool.acquire() as engine:
+                self.bot.engine = engine
+                self._ensure_maia(engine)
+                result = self.bot.choose_move_full(self.board)
+                self.bot.engine = None
+            elapsed = time.time() - start
+        except Exception as e:
+            log.error(f"Game {self.game_id}: engine error on move {move_num}: {e}")
+            # Fallback: play best Stockfish move or first legal move
+            import random as _random
+            try:
+                with self.pool.acquire() as engine:
+                    info = engine.analyse(self.board, chess.engine.Limit(depth=6))
+                    fallback_move = info.get("pv", [list(self.board.legal_moves)[0]])[0]
+            except Exception:
+                fallback_move = _random.choice(list(self.board.legal_moves))
+            try:
+                self.client.bots.make_move(self.game_id, fallback_move.uci())
+                self._last_processed_moves += 1
+            except Exception as e2:
+                log.error(f"Game {self.game_id}: fallback move also failed: {e2}")
+            return
 
         # Log our move
         self.logger.record_our_move(result)
@@ -258,9 +301,14 @@ class GameHandler:
 
         san = result.move_san
         uci = result.move.uci()
+        puzzle_tag = ""
+        if result.puzzle_found:
+            puzzle_tag = (f" ** {result.puzzle_type.upper()} PUZZLE "
+                         f"gap={result.puzzle_eval_gap:.2f} "
+                         f"floor={result.puzzle_floor_prob*100:.0f}%")
         log.info(f"Game {self.game_id}: playing {san} ({uci}) "
-                 f"[rank {result.move_rank}, nettl={result.nettlesomeness_score:.2f}, "
-                 f"crit={result.criticality_score:.2f}, {elapsed:.1f}s]")
+                 f"[rank {result.move_rank}, eval={result.deep_eval:+.2f}, "
+                 f"{elapsed:.1f}s]{puzzle_tag}")
 
         try:
             self.client.bots.make_move(self.game_id, uci)
@@ -286,11 +334,11 @@ class GameHandler:
         if self.bot.game_state is None:
             return
 
-        # Generate post-game summary
+        # Generate post-game summary (returns a list of message strings)
         game_state = self.bot.game_state
-        summary = self.chat.generate_post_game_summary(game_state)
-        if summary:
-            self._send_chat(summary)
+        summary_messages = self.chat.generate_post_game_summary(game_state)
+        for msg in summary_messages:
+            self._send_chat(msg)
 
         # Determine result
         result_str = self.board.result() if self.board.is_game_over() else "*"
@@ -541,23 +589,40 @@ def main():
     parser.add_argument("--casual-only", action="store_true",
                         help="Only accept casual challenges")
 
-    # Stonefish config overrides
-    parser.add_argument("--deep-depth", type=int, default=18,
-                        help="Deep pass depth (default: 18)")
-    parser.add_argument("--base-depth", type=int, default=6,
-                        help="Base shallow depth (default: 6)")
-    parser.add_argument("--band", type=int, default=5,
-                        help="Target band size (default: 5)")
+    # Stonefish config
+    parser.add_argument("--elo", type=int, default=1000,
+                        help="ELO preset (500/750/1000/1250/1500/1750/2000, default: 1000)")
+    parser.add_argument("--deep-depth", type=int, default=None,
+                        help="Override deep pass depth")
+    parser.add_argument("--base-depth", type=int, default=None,
+                        help="Override base shallow depth")
+    parser.add_argument("--band", type=int, default=None,
+                        help="Override target band size")
     parser.add_argument("--max-games", type=int, default=3,
                         help="Max concurrent games (default: 3)")
     args = parser.parse_args()
 
-    config = StonefishConfig(
-        deep_depth=args.deep_depth,
-        base_depth=args.base_depth,
-        target_band=args.band,
-        max_concurrent_games=args.max_games,
-    )
+    config = StonefishConfig(max_concurrent_games=args.max_games)
+    apply_preset(config, args.elo)
+
+    # Lichess quality boost -- we have 10+ min on the clock, so spend
+    # the extra time on deeper analysis vs the speed-capped viewer.
+    config.deep_depth = 16           # 12 -> 16: much more reliable evals
+    config.rollout_depth = max(config.rollout_depth, 10)  # 5 full moves of Maia rollout
+    config.num_candidates = 8        # 6 -> 8: more puzzle search surface
+
+    log.info(f"Applied ELO preset {args.elo}: floor={config.floor_rating}, "
+             f"stretch={config.stretch_rating}, reach={config.reach_rating}")
+    log.info(f"Lichess quality: deep={config.deep_depth}, rollout={config.rollout_depth}, "
+             f"candidates={config.num_candidates}")
+
+    # CLI overrides on top of preset (take priority over quality boost)
+    if args.deep_depth is not None:
+        config.deep_depth = args.deep_depth
+    if args.base_depth is not None:
+        config.base_depth = args.base_depth
+    if args.band is not None:
+        config.target_band = args.band
 
     token = load_token()
     bot = StonefishLichessBot(
