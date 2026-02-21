@@ -186,6 +186,87 @@ class MaiaEngine:
             rating=rating,
         )
 
+    @staticmethod
+    def _flip_turn(board: chess.Board) -> chess.Board:
+        """Return a copy of *board* with the side-to-move flipped via FEN surgery.
+
+        This produces a legal-looking board from python-chess's perspective so
+        that Stockfish's bestmove reply passes the UCI move-validation layer.
+        Castling rights and en-passant are cleared (irrelevant for the shallow
+        follow-up eval we need).
+        """
+        parts = board.fen().split()
+        parts[1] = "w" if parts[1] == "b" else "b"
+        parts[2] = "-"   # castling — avoid illegal-state complaints
+        parts[3] = "-"   # en passant
+        return chess.Board(" ".join(parts))
+
+    def predict_solitaire(self, board: chess.Board, rating: int) -> MaiaPrediction:
+        """Pick the move that sets up the best follow-up, assuming the opponent passes.
+
+        Replicates solitaire chess thinking: "I go here, then I go here."
+        Used to emulate ~500 ELO play patterns where opponent agency is ignored.
+
+        The trick: after pushing a candidate move, flip side_to_move back to the
+        original player before asking Maia what to do next. This mechanically
+        reproduces Type 4 magical thinking — planning based on your own next move,
+        not the opponent's reply.
+        """
+        if self.engine is None:
+            raise RuntimeError("No Stockfish engine available")
+
+        # Get top candidate moves for the current position
+        first_pred = self.predict(board, rating)
+        candidates = first_pred.top_n(5)
+
+        if not candidates:
+            return first_pred
+
+        best_move = candidates[0]
+        best_followup_score = -999.0
+
+        for move in candidates:
+            if move not in board.legal_moves:
+                continue
+
+            sim = board.copy()
+            sim.push(move)
+
+            # THE TRICK: don't hand the turn to the opponent — rebuild the
+            # board with our colour to move so python-chess + Stockfish agree.
+            sim = self._flip_turn(sim)
+
+            # Ask Maia what WE would do next (opponent skipped)
+            followup_pred = self.predict(sim, rating)
+            followup_move = followup_pred.top_move
+
+            if followup_move not in sim.legal_moves:
+                continue
+
+            # Score the position we'd reach after our imagined two-move sequence
+            sim.push(followup_move)
+
+            if sim.is_game_over():
+                # Checkmate or stalemate — assign extreme scores
+                score = 10000.0 if sim.is_checkmate() else 0.0
+            else:
+                try:
+                    info = self.engine.analyse(sim, chess.engine.Limit(depth=6))
+                    raw = info["score"].relative.score(mate_score=10000)
+                    score = float(raw) if raw is not None else 0.0
+                except Exception:
+                    score = 0.0
+
+            if score > best_followup_score:
+                best_followup_score = score
+                best_move = move
+
+        return MaiaPrediction(
+            top_move=best_move,
+            distribution={best_move: 1.0},
+            rating=rating,
+        )
+
     def _predict_stockfish_simulated(self, board: chess.Board, rating: int) -> MaiaPrediction:
         """Simulate Maia-like predictions using Stockfish at scaled depth.
 

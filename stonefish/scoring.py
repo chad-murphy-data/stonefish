@@ -62,6 +62,158 @@ def _count_material(board: chess.Board) -> float:
     return total
 
 
+# ---------------------------------------------------------------------------
+# Helper: is_genuinely_hung — smart hung-piece detection
+# ---------------------------------------------------------------------------
+
+HUNG_PIECE_VALUES = {
+    chess.PAWN: 1.0,
+    chess.KNIGHT: 3.0,
+    chess.BISHOP: 3.0,
+    chess.ROOK: 5.0,
+    chess.QUEEN: 9.0,
+}
+
+HUNG_PIECE_FLOOR = 0.8   # Minimum net gain to count as genuinely hung
+HUNG_PIECE_RATIO = 0.5   # Fraction of piece value required as net gain
+
+
+def is_genuinely_hung(
+    board: chess.Board,
+    square: chess.Square,
+    engine,
+    trade_depth: int = 4,
+    sf_depth: int = 6,
+) -> bool:
+    """Returns True only if a piece on `square` is genuinely free to take —
+    i.e., capturing it and surviving the recapture sequence nets the
+    capturing side at least max(HUNG_PIECE_FLOOR, piece_value * HUNG_PIECE_RATIO) pawns.
+
+    Filters out:
+    - Pieces that are protected (capture loses material after trades)
+    - Pieces where the capture is a losing exchange
+    - Pawns where a reasonable non-capture is nearly as good (GM positional ignore)
+
+    Args:
+        board:       Position to analyse (the side to move is the potential capturer)
+        square:      Square of the potentially hung piece
+        engine:      Stockfish engine instance
+        trade_depth: Depth to resolve trade sequences (4 is enough for most exchanges)
+        sf_depth:    Depth for the pawn-ignore non-capture baseline check
+    """
+    piece = board.piece_at(square)
+    if piece is None:
+        return False
+
+    # Only pieces belonging to the opponent can be hung
+    if piece.color == board.turn:
+        return False
+
+    captures = [m for m in board.legal_moves if m.to_square == square]
+    if not captures:
+        return False
+
+    piece_value = HUNG_PIECE_VALUES.get(piece.piece_type, 1.0)
+    min_gain = max(HUNG_PIECE_FLOOR, piece_value * HUNG_PIECE_RATIO)
+
+    winning_captures = []
+
+    for capture in captures:
+        sim = board.copy()
+        sim.push(capture)
+
+        if sim.is_game_over():
+            # Checkmate on capture — obviously winning
+            if sim.is_checkmate():
+                winning_captures.append((capture, 999.0))
+            continue
+
+        # Resolve the recapture sequence: play out up to trade_depth half-moves
+        try:
+            info = engine.analyse(sim, chess.engine.Limit(depth=trade_depth))
+            pv = info.get("pv", [])
+            for response in pv[:trade_depth]:
+                if response in sim.legal_moves:
+                    sim.push(response)
+                    if sim.is_game_over():
+                        break
+                else:
+                    break
+        except Exception:
+            pass
+
+        net = _net_material_gain(board, sim, board.turn)
+        if net >= min_gain:
+            winning_captures.append((capture, net))
+
+    if not winning_captures:
+        return False
+
+    # Pawn filter: if it's an opponent pawn, check whether not capturing is
+    # a reasonable choice (within 0.3 pawns of the best capture).
+    # This handles the GM "ignore the pawn for initiative" case.
+    if piece.piece_type == chess.PAWN:
+        best_capture_net = max(winning_captures, key=lambda x: x[1])[1]
+        non_capture_baseline = _best_non_capture_eval(board, engine, sf_depth)
+        if non_capture_baseline > -900:  # Valid baseline found
+            # Convert best_capture_net to eval-space for comparison
+            # (rough: net material gain ~ eval gain from capturing side's perspective)
+            if abs(best_capture_net - non_capture_baseline) < 0.3:
+                return False  # Pawn is "reasonable to ignore"
+
+    return True
+
+
+def _net_material_gain(
+    board_before: chess.Board,
+    board_after: chess.Board,
+    capturing_side: chess.Color,
+) -> float:
+    """Material delta from capturing_side's perspective after a sequence resolves.
+    Positive = capturing side gained material.
+    """
+    sign = 1.0 if capturing_side == chess.WHITE else -1.0
+    before = _count_material(board_before) * sign
+    after = _count_material(board_after) * sign
+    return after - before
+
+
+def _best_non_capture_eval(
+    board: chess.Board,
+    engine,
+    depth: int,
+) -> float:
+    """Stockfish eval (in pawns, from side-to-move's perspective) of the best
+    non-capture move. Used as a baseline for the pawn-ignore filter.
+
+    Returns -999.0 if no non-capture moves exist or analysis fails.
+    """
+    non_captures = [m for m in board.legal_moves if not board.is_capture(m)]
+    if not non_captures:
+        return -999.0
+
+    sign = 1.0 if board.turn == chess.WHITE else -1.0
+
+    try:
+        result = engine.analyse(board, chess.engine.Limit(depth=depth), multipv=5)
+        for line in result:
+            if "pv" not in line:
+                continue
+            top_move = line["pv"][0]
+            if not board.is_capture(top_move):
+                raw = line["score"].white().score(mate_score=10000)
+                if raw is not None:
+                    return (raw / 100.0) * sign
+    except Exception:
+        pass
+
+    return -999.0
+
+
+# ---------------------------------------------------------------------------
+# Helper: smart net material difference filter (existing)
+# ---------------------------------------------------------------------------
+
 def net_material_difference(board: chess.Board, move_a: chess.Move, move_b: chess.Move, engine) -> float:
     """Play out each move through obvious trade sequences, compare net material.
 
