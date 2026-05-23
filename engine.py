@@ -17,7 +17,8 @@ import chess
 import chess.engine
 import random
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import List, Optional
 
 import os
 import shutil
@@ -57,12 +58,68 @@ class MoveScore:
     second_response_eval: float  # Opponent's 2nd best response
     third_response_eval: float   # Opponent's 3rd best response
     difficulty_score: float  # Our composite difficulty score (higher = harder for opponent)
-    
+    top_response_moves: List[chess.Move] = field(default_factory=list)  # opponent's top-N reply moves
+
     def __repr__(self):
         return (f"Move({self.move}: own={self.own_eval:+.2f}, "
                 f"gap_1_2={self.second_response_eval - self.best_response_eval:.2f}, "
                 f"gap_1_3={self.third_response_eval - self.best_response_eval:.2f}, "
                 f"difficulty={self.difficulty_score:.2f})")
+
+
+@dataclass
+class NettlesomeMoment:
+    """A position where the bot deliberately deviated from Stockfish #1 in
+    favor of a higher-difficulty move. Captures what the opponent SHOULD
+    have played and what they actually did."""
+    move_num: int                       # halfmove number (1-indexed)
+    our_move_san: str                   # SAN of the move we played
+    sf_top_san: str                     # SAN of the SF #1 move we passed up
+    eval_cost: float                    # pawns sacrificed vs SF #1
+    gap_1_2: float                      # pawn gap between opponent's #1 and #2 replies
+    top_response_ucis: List[str] = field(default_factory=list)  # opponent's top-N replies (UCI)
+    opponent_reply_uci: Optional[str] = None  # what opponent actually played
+    opponent_rank: Optional[int] = None       # 1=found #1, 2=#2, 3=#3, 4=outside top-3
+
+
+@dataclass
+class GameStats:
+    """Per-game diagnostics from a NettlesomeBot's perspective."""
+    moments: List[NettlesomeMoment] = field(default_factory=list)
+    result: Optional[float] = None      # 1.0=we won, 0.0=we lost, 0.5=draw
+    total_moves: int = 0
+    color: Optional[chess.Color] = None
+
+    @property
+    def n_moments(self) -> int:
+        return len(self.moments)
+
+    @property
+    def n_opp_found_top(self) -> int:
+        return sum(1 for m in self.moments if m.opponent_rank == 1)
+
+    @property
+    def n_opp_found_top3(self) -> int:
+        return sum(1 for m in self.moments if m.opponent_rank is not None and m.opponent_rank <= 3)
+
+    @property
+    def avg_gap(self) -> float:
+        if not self.moments: return 0.0
+        return sum(m.gap_1_2 for m in self.moments) / len(self.moments)
+
+    @property
+    def avg_eval_cost(self) -> float:
+        if not self.moments: return 0.0
+        return sum(m.eval_cost for m in self.moments) / len(self.moments)
+
+    @property
+    def rank_distribution(self) -> dict:
+        dist = {1: 0, 2: 0, 3: 0, "4+": 0}
+        for m in self.moments:
+            if m.opponent_rank is None: continue
+            if m.opponent_rank >= 4: dist["4+"] += 1
+            else: dist[m.opponent_rank] += 1
+        return dist
 
 
 def get_top_moves(engine, board, num_moves=5, depth=16, time_limit=None):
@@ -162,66 +219,127 @@ def score_candidate_move(engine, board, candidate_move, num_responses=3, depth=1
         best_response_eval=best_resp,
         second_response_eval=second_resp,
         third_response_eval=third_resp,
-        difficulty_score=difficulty
+        difficulty_score=difficulty,
+        top_response_moves=[m for m, _ in opponent_moves],
     )
 
 
 class NettlesomeBot:
-    """Plays the move that maximizes opponent difficulty."""
-    
-    def __init__(self, engine, num_candidates=10, num_responses=3, 
-                 depth=16, max_eval_cost=1.0):
+    """Plays the move that maximizes opponent difficulty.
+
+    Tracks "nettlesome moments" -- positions where we deliberately passed up
+    Stockfish's top move for one that's harder for the opponent to answer --
+    and the opponent's reply rank, so we can measure whether the strategy
+    actually works.
+    """
+
+    # Minimum eval_cost to count a move as a nettlesome moment.
+    # Anything below this is effectively the SF #1 move (or a tied alternative)
+    # and isn't a deliberate sacrifice.
+    NETTLESOME_MIN_COST = 0.05
+
+    def __init__(self, engine, num_candidates=10, num_responses=3,
+                 depth=16, max_eval_cost=1.0, label="Nettlesome"):
         self.engine = engine
         self.num_candidates = num_candidates
         self.num_responses = num_responses
         self.depth = depth
         self.max_eval_cost = max_eval_cost  # Max pawns we'll sacrifice for difficulty
-    
+        self.label = label
+        self.stats: GameStats = GameStats()
+        self._move_counter = 0
+        self._pending_moment: Optional[NettlesomeMoment] = None
+
+    def reset_stats(self, color: chess.Color):
+        """Reset per-game stats. Call before a new game."""
+        self.stats = GameStats(color=color)
+        self._move_counter = 0
+        self._pending_moment = None
+
+    def note_opponent_reply(self, opponent_move: chess.Move):
+        """Record that the opponent just played `opponent_move`. If we set a
+        nettlesome trap on our previous move, classify the opponent's rank."""
+        if self._pending_moment is None:
+            return
+        reply_uci = opponent_move.uci()
+        self._pending_moment.opponent_reply_uci = reply_uci
+        try:
+            idx = self._pending_moment.top_response_ucis.index(reply_uci)
+            self._pending_moment.opponent_rank = idx + 1
+        except ValueError:
+            self._pending_moment.opponent_rank = 4  # outside the top-N we tracked
+        self._pending_moment = None
+
     def choose_move(self, board):
         """Choose the most nettlesome move."""
+        self._move_counter += 1
+
         # Get our top candidate moves
-        candidates = get_top_moves(self.engine, board, 
-                                   num_moves=self.num_candidates, 
+        candidates = get_top_moves(self.engine, board,
+                                   num_moves=self.num_candidates,
                                    depth=self.depth)
-        
+
         if not candidates:
-            # Fallback: random legal move
             return random.choice(list(board.legal_moves))
-        
-        best_eval = candidates[0][1]  # Best available eval
+
+        sf_top_move, sf_top_eval = candidates[0]
         sign = 1.0 if board.turn == chess.WHITE else -1.0
-        best_eval_for_us = best_eval * sign
-        
+        best_eval_for_us = sf_top_eval * sign
+
         # Score each candidate by opponent difficulty
         scored = []
         for move, eval_cp in candidates:
             eval_for_us = eval_cp * sign
-            
-            # Skip moves that cost too much eval
+
             eval_cost = best_eval_for_us - eval_for_us
             if eval_cost > self.max_eval_cost:
                 continue
-            
-            ms = score_candidate_move(self.engine, board, move, 
+
+            ms = score_candidate_move(self.engine, board, move,
                                       self.num_responses, self.depth)
             ms.own_eval = eval_for_us
-            
-            # Adjust difficulty score by eval cost
             # Penalize moves that cost us eval, but not too harshly
             ms.difficulty_score -= eval_cost * 0.5
-            
-            scored.append(ms)
-        
+            scored.append((ms, eval_cost))
+
         if not scored:
-            return candidates[0][0]  # Fallback to best move
-        
-        # Pick the move with highest difficulty score
-        scored.sort(key=lambda x: x.difficulty_score, reverse=True)
-        return scored[0].move
-    
+            return sf_top_move
+
+        scored.sort(key=lambda x: x[0].difficulty_score, reverse=True)
+        chosen_ms, chosen_cost = scored[0]
+        chosen_move = chosen_ms.move
+
+        # Did we set a nettlesome trap? (passed up SF #1 for a costlier move)
+        if chosen_move != sf_top_move and chosen_cost >= self.NETTLESOME_MIN_COST:
+            try:
+                our_san = board.san(chosen_move)
+            except Exception:
+                our_san = chosen_move.uci()
+            try:
+                sf_san = board.san(sf_top_move)
+            except Exception:
+                sf_san = sf_top_move.uci()
+
+            gap = chosen_ms.second_response_eval - chosen_ms.best_response_eval
+            moment = NettlesomeMoment(
+                move_num=self._move_counter,
+                our_move_san=our_san,
+                sf_top_san=sf_san,
+                eval_cost=round(chosen_cost, 3),
+                gap_1_2=round(gap, 3),
+                top_response_ucis=[m.uci() for m in chosen_ms.top_response_moves],
+            )
+            self.stats.moments.append(moment)
+            self._pending_moment = moment
+
+        return chosen_move
+
     @property
     def name(self):
-        return f"Nettlesome(d={self.depth},c={self.num_candidates})"
+        tag = "Tight" if self.max_eval_cost <= 0.5 else ""
+        if self.label != "Nettlesome":
+            return f"{self.label}(d={self.depth},c={self.num_candidates},ec={self.max_eval_cost})"
+        return f"Nettlesome{tag}(d={self.depth},c={self.num_candidates},ec={self.max_eval_cost})"
 
 
 class RandomTopNBot:
@@ -283,45 +401,132 @@ class PureStockfishBot:
         return f"PureStockfish(d={self.depth})"
 
 
-def play_game(white_bot, black_bot, max_moves=200, verbose=False):
+class MaiaBot:
+    """Wraps lc0 + a Maia weights file as a UCI engine playing partner.
+
+    Maia models output a policy distribution over moves trained to match
+    human play at a specific Elo. With `nodes=1` lc0 just samples the
+    policy head -- exactly how Maia is meant to be evaluated.
+    """
+
+    def __init__(self, weights_path, rating=1900, lc0_path="lc0",
+                 backend="eigen", threads=1, nodes=1):
+        self.weights_path = weights_path
+        self.rating = rating
+        self.nodes = nodes
+        self._engine = chess.engine.SimpleEngine.popen_uci([
+            lc0_path,
+            f"--weights={weights_path}",
+            f"--backend={backend}",
+            f"--threads={threads}",
+        ])
+
+    def choose_move(self, board):
+        result = self._engine.play(board, chess.engine.Limit(nodes=self.nodes))
+        if result.move is None:
+            return random.choice(list(board.legal_moves))
+        return result.move
+
+    def quit(self):
+        try:
+            self._engine.quit()
+        except Exception:
+            pass
+
+    @property
+    def name(self):
+        return f"Maia{self.rating}"
+
+
+def play_game(white_bot, black_bot, max_moves=200, verbose=False, live=False,
+              game_label=""):
     """Play a single game between two bots. Returns result from white's perspective.
-    
+
     Returns: (result, num_moves, move_list)
         result: 1.0 = white wins, 0.0 = black wins, 0.5 = draw
+
+    If a bot is a NettlesomeBot, its per-game stats are reset at the start
+    and populated during the game (visible afterwards via `bot.stats`).
+
+    `live=True` prints a compact one-line status per move, with [N!] marking
+    moves where the nettlesome bot deliberately deviated from SF #1.
     """
     board = chess.Board()
     moves = []
-    
-    for move_num in range(max_moves):
+
+    # Reset stats on any nettlesome bots
+    if isinstance(white_bot, NettlesomeBot):
+        white_bot.reset_stats(chess.WHITE)
+    if isinstance(black_bot, NettlesomeBot):
+        black_bot.reset_stats(chess.BLACK)
+
+    if live and game_label:
+        print(f"    [{game_label}] starting", flush=True)
+
+    last_status_ply = 0
+
+    for ply in range(max_moves):
         if board.is_game_over():
             break
-        
-        if board.turn == chess.WHITE:
-            move = white_bot.choose_move(board)
-        else:
-            move = black_bot.choose_move(board)
-        
-        if verbose:
-            side = "W" if board.turn == chess.WHITE else "B"
-            print(f"  {move_num + 1}. {side}: {board.san(move)}")
-        
+
+        active = white_bot if board.turn == chess.WHITE else black_bot
+        passive = black_bot if board.turn == chess.WHITE else white_bot
+        side_char = "W" if board.turn == chess.WHITE else "B"
+
+        # Pre-compute SAN before pushing (board.san() needs the move to be legal in the current position)
+        move = active.choose_move(board)
+        try:
+            move_san = board.san(move)
+        except Exception:
+            move_san = move.uci()
+
+        # Tell the passive bot what just landed -- it may want to classify
+        if isinstance(passive, NettlesomeBot):
+            passive.note_opponent_reply(move)
+
         moves.append(move)
         board.push(move)
-    
-    # Determine result
-    result = board.result()
-    if result == "1-0":
-        return 1.0, len(moves), moves
-    elif result == "0-1":
-        return 0.0, len(moves), moves
+
+        if verbose:
+            print(f"  {ply + 1}. {side_char}: {move_san}")
+
+        if live:
+            # Was this a nettlesome moment?
+            tag = ""
+            if isinstance(active, NettlesomeBot) and active.stats.moments:
+                last_m = active.stats.moments[-1]
+                if last_m.move_num == active._move_counter:
+                    tag = f" [N! cost={last_m.eval_cost:.2f} gap={last_m.gap_1_2:.2f}]"
+            # Print every 10 plies, every nettlesome moment, or at end
+            should_print = bool(tag) or (ply - last_status_ply) >= 10
+            if should_print:
+                prefix = f"    [{game_label}] " if game_label else "    "
+                print(f"{prefix}ply {ply + 1:3d} {side_char}: {move_san}{tag}", flush=True)
+                last_status_ply = ply
+
+    result_str = board.result()
+    if result_str == "1-0":
+        result = 1.0
+    elif result_str == "0-1":
+        result = 0.0
     else:
-        return 0.5, len(moves), moves
+        result = 0.5
+
+    # Populate per-bot result + move count from each side's perspective
+    if isinstance(white_bot, NettlesomeBot):
+        white_bot.stats.result = result
+        white_bot.stats.total_moves = len(moves)
+    if isinstance(black_bot, NettlesomeBot):
+        black_bot.stats.result = 1.0 - result
+        black_bot.stats.total_moves = len(moves)
+
+    return result, len(moves), moves
 
 
-def run_simulation(bot_a, bot_b, num_games=20, verbose=False):
+def run_simulation(bot_a, bot_b, num_games=20, verbose=False, live=False):
     """Run a simulation between two bots, alternating colors.
-    
-    Returns dict with results.
+
+    Returns dict with results plus aggregated nettlesome stats.
     """
     results = {
         "bot_a_name": bot_a.name,
@@ -331,32 +536,32 @@ def run_simulation(bot_a, bot_b, num_games=20, verbose=False):
         "draws": 0,
         "total_games": 0,
         "total_moves": 0,
-        "game_results": []
+        "game_results": [],
+        "nettlesome_games": [],  # list of GameStats from nettlesome bots
     }
-    
+
     for game_num in range(num_games):
-        # Alternate colors
         if game_num % 2 == 0:
             white, black = bot_a, bot_b
             a_is_white = True
         else:
             white, black = bot_b, bot_a
             a_is_white = False
-        
-        if verbose:
+
+        game_label = f"G{game_num + 1}/{num_games}"
+        if live:
+            print(f"  [{game_label}] W={white.name} vs B={black.name}", flush=True)
+        elif verbose:
             print(f"\nGame {game_num + 1}/{num_games}: "
                   f"W={white.name} vs B={black.name}")
-        
+
         start = time.time()
-        score, num_moves, _ = play_game(white, black, verbose=False)
+        score, num_moves, _ = play_game(white, black, verbose=False, live=live,
+                                        game_label=game_label)
         elapsed = time.time() - start
-        
-        # Convert to bot_a's perspective
-        if a_is_white:
-            a_score = score
-        else:
-            a_score = 1.0 - score
-        
+
+        a_score = score if a_is_white else 1.0 - score
+
         if a_score == 1.0:
             results["bot_a_wins"] += 1
             outcome = f"{bot_a.name} wins"
@@ -366,90 +571,138 @@ def run_simulation(bot_a, bot_b, num_games=20, verbose=False):
         else:
             results["draws"] += 1
             outcome = "Draw"
-        
+
         results["total_games"] += 1
         results["total_moves"] += num_moves
         results["game_results"].append(a_score)
-        
-        print(f"  Game {game_num + 1}: {outcome} in {num_moves} moves ({elapsed:.1f}s)")
-    
-    # Summary
+
+        # Capture nettlesome stats from whichever side is the NettlesomeBot
+        for bot in (white, black):
+            if isinstance(bot, NettlesomeBot) and bot is bot_a:
+                results["nettlesome_games"].append(bot.stats)
+
+        # Per-game one-liner with nettlesome stats inline
+        extras = ""
+        if isinstance(bot_a, NettlesomeBot):
+            s = bot_a.stats
+            top_rate = (s.n_opp_found_top / s.n_moments) if s.n_moments else 0.0
+            extras = (f"  | nettlesome: {s.n_moments} moments, "
+                      f"opp-found-top={s.n_opp_found_top}/{s.n_moments} ({top_rate:.0%}), "
+                      f"avg-cost={s.avg_eval_cost:.2f}p, avg-gap={s.avg_gap:.2f}p")
+        print(f"  Game {game_num + 1}: {outcome} in {num_moves} moves ({elapsed:.1f}s){extras}",
+              flush=True)
+
     total = results["total_games"]
     a_score = (results["bot_a_wins"] + 0.5 * results["draws"]) / total
     avg_moves = results["total_moves"] / total
-    
-    print(f"\n{'='*60}")
+
+    print(f"\n{'='*60}", flush=True)
     print(f"RESULTS: {bot_a.name} vs {bot_b.name}")
     print(f"{'='*60}")
     print(f"  {bot_a.name}: {results['bot_a_wins']}W / {results['draws']}D / {results['bot_b_wins']}L")
     print(f"  Score: {a_score:.1%}")
     print(f"  Avg game length: {avg_moves:.0f} moves")
-    print(f"{'='*60}")
-    
+
+    # Aggregate nettlesome diagnostics across games
+    nett_games = results["nettlesome_games"]
+    if nett_games:
+        total_moments = sum(s.n_moments for s in nett_games)
+        total_found_top = sum(s.n_opp_found_top for s in nett_games)
+        total_found_top3 = sum(s.n_opp_found_top3 for s in nett_games)
+        weighted_cost = sum(m.eval_cost for s in nett_games for m in s.moments)
+        weighted_gap = sum(m.gap_1_2 for s in nett_games for m in s.moments)
+        agg_dist = {1: 0, 2: 0, 3: 0, "4+": 0}
+        for s in nett_games:
+            d = s.rank_distribution
+            for k in agg_dist:
+                agg_dist[k] += d[k]
+        top_rate = (total_found_top / total_moments) if total_moments else 0.0
+        top3_rate = (total_found_top3 / total_moments) if total_moments else 0.0
+        print(f"  ---")
+        print(f"  Nettlesome diagnostics across {len(nett_games)} games:")
+        print(f"    moments played:       {total_moments} ({total_moments/len(nett_games):.1f}/game)")
+        print(f"    opp found #1 reply:   {total_found_top}/{total_moments} ({top_rate:.0%})")
+        print(f"    opp in top-3 reply:   {total_found_top3}/{total_moments} ({top3_rate:.0%})")
+        print(f"    avg eval cost paid:   {weighted_cost/total_moments:.2f} pawns" if total_moments else "    avg eval cost paid:   n/a")
+        print(f"    avg gap 1-2 created:  {weighted_gap/total_moments:.2f} pawns" if total_moments else "    avg gap 1-2 created:  n/a")
+        print(f"    rank distribution:    #1={agg_dist[1]}, #2={agg_dist[2]}, #3={agg_dist[3]}, miss={agg_dist['4+']}")
+    print(f"{'='*60}", flush=True)
+
     return results
 
 
 if __name__ == "__main__":
     import sys
-    
-    # Parse arguments
-    num_games = int(sys.argv[1]) if len(sys.argv) > 1 else 10
+    import os
+
+    num_games = int(sys.argv[1]) if len(sys.argv) > 1 else 4
     depth = int(sys.argv[2]) if len(sys.argv) > 2 else 12
-    
+    maia_weights = os.environ.get("MAIA_WEIGHTS", "/home/user/.maia/maia-1900.pb.gz")
+    maia_rating = int(os.environ.get("MAIA_RATING", "1900"))
+
     print(f"Nettlesome Chess Engine Simulation")
-    print(f"Games: {num_games}, Depth: {depth}")
+    print(f"Games per matchup: {num_games}, Depth: {depth}")
     print(f"Stockfish: {STOCKFISH_PATH}")
+    print(f"Maia weights: {maia_weights} (rating {maia_rating})")
     print()
-    
+
     engine = chess.engine.SimpleEngine.popen_uci(STOCKFISH_PATH)
-    
-    # Configure engine for speed
     engine.configure({"Threads": 2, "Hash": 256})
-    
-    # Create bots
-    nettlesome = NettlesomeBot(engine, num_candidates=7, num_responses=3, 
+
+    nettlesome = NettlesomeBot(engine, num_candidates=7, num_responses=3,
                                 depth=depth, max_eval_cost=1.0)
-    random_top5 = RandomTopNBot(engine, top_n=5, depth=depth)
+    nettlesome_tight = NettlesomeBot(engine, num_candidates=7, num_responses=3,
+                                     depth=depth, max_eval_cost=0.3)
     stockfish = PureStockfishBot(engine, depth=depth)
-    
-    # Run matchups
-    print("=" * 60)
-    print("MATCHUP 1: Nettlesome vs RandomTop5")
-    print("=" * 60)
-    r1 = run_simulation(nettlesome, random_top5, num_games=num_games)
-    
-    print()
-    print("=" * 60)
-    print("MATCHUP 2: PureStockfish vs RandomTop5")
-    print("=" * 60)
-    r2 = run_simulation(stockfish, random_top5, num_games=num_games)
-    
-    print()
-    print("=" * 60)
-    print("MATCHUP 3: Nettlesome vs PureStockfish")
-    print("=" * 60)
-    r3 = run_simulation(nettlesome, stockfish, num_games=num_games)
-    
-    # Final comparison
-    print()
-    print("=" * 60)
+    random_top5 = RandomTopNBot(engine, top_n=5, depth=depth)
+    maia = MaiaBot(maia_weights, rating=maia_rating)
+
+    all_results = {}
+
+    matchups = [
+        ("Nettlesome vs Maia",      nettlesome,       maia),
+        ("NettlesomeTight vs Maia", nettlesome_tight, maia),
+        ("PureStockfish vs Maia",   stockfish,        maia),
+        ("Nettlesome vs RandomTop5",      nettlesome,       random_top5),
+        ("NettlesomeTight vs RandomTop5", nettlesome_tight, random_top5),
+        ("PureStockfish vs RandomTop5",   stockfish,        random_top5),
+    ]
+
+    for label, bot_a, bot_b in matchups:
+        print("=" * 60, flush=True)
+        print(f"MATCHUP: {label}")
+        print("=" * 60, flush=True)
+        r = run_simulation(bot_a, bot_b, num_games=num_games, live=True)
+        all_results[label] = r
+        print(flush=True)
+
+    # Final comparison: divergence bots vs control, against each opponent
+    print("=" * 70)
     print("FINAL COMPARISON")
-    print("=" * 60)
-    
-    n_vs_r = (r1["bot_a_wins"] + 0.5 * r1["draws"]) / r1["total_games"]
-    s_vs_r = (r2["bot_a_wins"] + 0.5 * r2["draws"]) / r2["total_games"]
-    n_vs_s = (r3["bot_a_wins"] + 0.5 * r3["draws"]) / r3["total_games"]
-    
-    print(f"  Nettlesome vs RandomTop5:    {n_vs_r:.1%}")
-    print(f"  PureStockfish vs RandomTop5: {s_vs_r:.1%}")
-    print(f"  Nettlesome vs PureStockfish: {n_vs_s:.1%}")
+    print("=" * 70)
+    print(f"{'Matchup':<38} {'Score':>7} {'W-D-L':>10} {'AvgLen':>7}")
+    print("-" * 70)
+    for label, r in all_results.items():
+        total = r["total_games"]
+        score = (r["bot_a_wins"] + 0.5 * r["draws"]) / total
+        avg_len = r["total_moves"] / total
+        wdl = f"{r['bot_a_wins']}-{r['draws']}-{r['bot_b_wins']}"
+        print(f"{label:<38} {score:>6.1%} {wdl:>10} {avg_len:>6.0f}")
+
     print()
-    
-    if n_vs_r > s_vs_r:
-        print(f"  >>> Nettlesome beats RandomTop5 MORE than PureStockfish does!")
-        print(f"  >>> Edge: {n_vs_r - s_vs_r:+.1%}")
-    else:
-        print(f"  >>> PureStockfish beats RandomTop5 more than Nettlesome")
-        print(f"  >>> Difference: {s_vs_r - n_vs_r:+.1%}")
-    
+    for opp in ("Maia", "RandomTop5"):
+        n = all_results.get(f"Nettlesome vs {opp}")
+        nt = all_results.get(f"NettlesomeTight vs {opp}")
+        s = all_results.get(f"PureStockfish vs {opp}")
+        if not (n and nt and s): continue
+        n_score = (n["bot_a_wins"] + 0.5 * n["draws"]) / n["total_games"]
+        nt_score = (nt["bot_a_wins"] + 0.5 * nt["draws"]) / nt["total_games"]
+        s_score = (s["bot_a_wins"] + 0.5 * s["draws"]) / s["total_games"]
+        print(f"vs {opp}:")
+        print(f"    Nettlesome:      {n_score:.1%}  (edge over SF: {n_score - s_score:+.1%})")
+        print(f"    NettlesomeTight: {nt_score:.1%}  (edge over SF: {nt_score - s_score:+.1%})")
+        print(f"    PureStockfish:   {s_score:.1%}  (control)")
+        print()
+
+    maia.quit()
     engine.quit()
