@@ -250,7 +250,15 @@ class NettlesomeBot:
 
     def __init__(self, engine, num_candidates=10, num_responses=3,
                  depth=16, max_eval_cost=1.0, label="Nettlesome",
-                 maia_oracle=None, baseline_bot=None):
+                 maia_oracle=None, baseline_bot=None,
+                 # Puzzle-mode filter: when enabled, instead of picking the
+                 # highest-EV trap, we filter candidates to those that meet
+                 # all the conditions below and pick the one with policy
+                 # probability closest to 0.5 (maximum game-deciding
+                 # uncertainty). Disabled when puzzle_mode=False (default).
+                 puzzle_mode=False,
+                 min_eval_cost=0.0, min_gap=0.0, min_gap_ratio=0.0,
+                 p_maia_min=0.0, p_maia_max=1.0):
         self.engine = engine
         self.num_candidates = num_candidates
         self.num_responses = num_responses
@@ -267,6 +275,12 @@ class NettlesomeBot:
         # weakening overall play to a target rating while keeping the
         # sharp traps the EV logic finds.
         self.baseline_bot = baseline_bot
+        self.puzzle_mode = puzzle_mode
+        self.min_eval_cost = min_eval_cost
+        self.min_gap = min_gap
+        self.min_gap_ratio = min_gap_ratio
+        self.p_maia_min = p_maia_min
+        self.p_maia_max = p_maia_max
         self.stats: GameStats = GameStats()
         self._move_counter = 0
         self._pending_moment: Optional[NettlesomeMoment] = None
@@ -356,19 +370,46 @@ class NettlesomeBot:
                 ev = (1.0 - p_top) * gap - eval_cost
                 ev_scored.append((ms, eval_cost, p_top, ev))
 
-            # Sort by EV descending. Ties broken by lower cost.
-            ev_scored.sort(key=lambda x: (-x[3], x[1]))
-            chosen_ms, chosen_cost, chosen_p, chosen_ev = ev_scored[0]
-            chosen_move = chosen_ms.move
+            if self.puzzle_mode:
+                # Strict trap filter: keep only candidates meeting every
+                # condition. Pick the one whose P_maia_top is closest to
+                # 0.5 -- the moment where the opponent's choice most
+                # genuinely determines the game.
+                filtered = []
+                for ms, cost, p, ev in ev_scored:
+                    if ms.move == sf_top_move:
+                        continue
+                    if p is None:
+                        continue
+                    if cost < self.min_eval_cost:
+                        continue
+                    gap = ms.second_response_eval - ms.best_response_eval
+                    if gap < self.min_gap:
+                        continue
+                    if cost > 0 and (gap / cost) < self.min_gap_ratio:
+                        continue
+                    if not (self.p_maia_min <= p <= self.p_maia_max):
+                        continue
+                    filtered.append((ms, cost, p, ev))
+                if not filtered:
+                    if self.baseline_bot is not None:
+                        return self.baseline_bot.choose_move(board)
+                    return sf_top_move
+                filtered.sort(key=lambda x: abs(x[2] - 0.5))
+                chosen_ms, chosen_cost, chosen_p, chosen_ev = filtered[0]
+                chosen_move = chosen_ms.move
+            else:
+                # Sort by EV descending. Ties broken by lower cost.
+                ev_scored.sort(key=lambda x: (-x[3], x[1]))
+                chosen_ms, chosen_cost, chosen_p, chosen_ev = ev_scored[0]
+                chosen_move = chosen_ms.move
 
-            # If the best move is SF #1 (or no candidate has positive EV),
-            # we don't set a trap here. Fall back to the baseline_bot if
-            # one's been configured (e.g., Maia 1900 to dial down the bot's
-            # overall strength), otherwise play SF #1.
-            if chosen_move == sf_top_move or chosen_ev <= 0.0:
-                if self.baseline_bot is not None:
-                    return self.baseline_bot.choose_move(board)
-                return sf_top_move
+                # If the best move is SF #1 (or no candidate has positive
+                # EV), fall back to the baseline_bot or SF #1.
+                if chosen_move == sf_top_move or chosen_ev <= 0.0:
+                    if self.baseline_bot is not None:
+                        return self.baseline_bot.choose_move(board)
+                    return sf_top_move
         else:
             # Legacy difficulty-score path (with hand-tuned cost penalty)
             for ms, eval_cost in scored:
@@ -406,13 +447,13 @@ class NettlesomeBot:
 
     @property
     def name(self):
-        ev_tag = "+EV" if self.maia_oracle is not None else ""
+        mode_tag = "+Puzzle" if self.puzzle_mode else ("+EV" if self.maia_oracle is not None else "")
         tight_tag = "Tight" if self.max_eval_cost <= 0.5 else ""
         base_tag = ""
         if self.baseline_bot is not None:
             base_tag = f"/{getattr(self.baseline_bot, 'name', 'baseline')}"
         base = self.label if self.label != "Nettlesome" else "Nettlesome"
-        return (f"{base}{tight_tag}{ev_tag}{base_tag}"
+        return (f"{base}{tight_tag}{mode_tag}{base_tag}"
                 f"(d={self.depth},c={self.num_candidates},ec={self.max_eval_cost})")
 
 
@@ -738,37 +779,41 @@ if __name__ == "__main__":
     from maia_policy import MaiaPolicyEngine
     maia_oracle = MaiaPolicyEngine(maia_weights, rating=maia_rating)
 
-    # Three baseline Maia bots at different temperatures. The bot plays its
-    # baseline on every non-trap move; the EV logic kicks in only when a
-    # positive-EV trap is available.
-    baseline_t0   = MaiaBot(maia_weights, rating=maia_rating, temperature=0.0, seed=1)
-    baseline_t05  = MaiaBot(maia_weights, rating=maia_rating, temperature=0.5, seed=2)
-    baseline_t1   = MaiaBot(maia_weights, rating=maia_rating, temperature=1.0, seed=3)
+    # Baseline = stochastic Maia 1900 (T=1) -- the calibration sweet spot
+    # from the previous tournament where Stonefish becomes beatable.
+    baseline_t1 = MaiaBot(maia_weights, rating=maia_rating, temperature=1.0, seed=3)
 
-    stonefish_t0  = NettlesomeBot(engine, num_candidates=7, num_responses=3,
-                                  depth=depth, max_eval_cost=1.0,
-                                  maia_oracle=maia_oracle,
-                                  baseline_bot=baseline_t0)
-    stonefish_t05 = NettlesomeBot(engine, num_candidates=7, num_responses=3,
-                                  depth=depth, max_eval_cost=1.0,
-                                  maia_oracle=maia_oracle,
-                                  baseline_bot=baseline_t05)
-    stonefish_t1  = NettlesomeBot(engine, num_candidates=7, num_responses=3,
-                                  depth=depth, max_eval_cost=1.0,
-                                  maia_oracle=maia_oracle,
-                                  baseline_bot=baseline_t1)
+    # Strict puzzle-filter Stonefish. Plays a trap only when the position
+    # meets every filter condition simultaneously; otherwise plays its
+    # Maia baseline. Picks by P closest to 0.5 (maximum opponent
+    # uncertainty -- the real "puzzle moment of the game").
+    stonefish_puzzle = NettlesomeBot(
+        engine, num_candidates=7, num_responses=3,
+        depth=depth, max_eval_cost=1.5,           # allow costlier traps
+        maia_oracle=maia_oracle, baseline_bot=baseline_t1,
+        puzzle_mode=True,
+        min_eval_cost=0.5,                        # each find gives opp ~0.5p
+        min_gap=1.5,                              # each miss costs opp ~1.0p (net)
+        min_gap_ratio=2.0,                        # gap >= 2 * cost (asymmetric)
+        p_maia_min=0.30, p_maia_max=0.70,         # findable for 1900, not trivial
+    )
+
+    # Loose-EV Stonefish at T=1 baseline for direct comparison
+    stonefish_ev_t1 = NettlesomeBot(
+        engine, num_candidates=7, num_responses=3,
+        depth=depth, max_eval_cost=1.0,
+        maia_oracle=maia_oracle, baseline_bot=baseline_t1,
+    )
 
     stockfish = PureStockfishBot(engine, depth=depth)
-    # The opponent: stochastic Maia 1900 at T=1, separate seed
     maia = MaiaBot(maia_weights, rating=maia_rating, temperature=1.0, seed=99)
 
     all_results = {}
 
     matchups = [
-        ("Stonefish (T=0)   vs Maia",   stonefish_t0,  maia),
-        ("Stonefish (T=0.5) vs Maia",   stonefish_t05, maia),
-        ("Stonefish (T=1.0) vs Maia",   stonefish_t1,  maia),
-        ("PureStockfish     vs Maia",   stockfish,     maia),
+        ("Stonefish+Puzzle (T=1) vs Maia", stonefish_puzzle, maia),
+        ("Stonefish+EV     (T=1) vs Maia", stonefish_ev_t1,  maia),
+        ("PureStockfish          vs Maia", stockfish,        maia),
     ]
 
     for label, bot_a, bot_b in matchups:
@@ -793,21 +838,20 @@ if __name__ == "__main__":
         print(f"{label:<38} {score:>6.1%} {wdl:>10} {avg_len:>6.0f}")
 
     print()
-    s = all_results.get("PureStockfish     vs Maia")
+    s = all_results.get("PureStockfish          vs Maia")
     if s:
         s_score = (s["bot_a_wins"] + 0.5 * s["draws"]) / s["total_games"]
-        for label in ("Stonefish (T=0)   vs Maia",
-                      "Stonefish (T=0.5) vs Maia",
-                      "Stonefish (T=1.0) vs Maia"):
+        for label in ("Stonefish+Puzzle (T=1) vs Maia",
+                      "Stonefish+EV     (T=1) vs Maia"):
             r = all_results.get(label)
             if not r:
                 continue
             r_score = (r["bot_a_wins"] + 0.5 * r["draws"]) / r["total_games"]
-            print(f"  {label:<32} {r_score:>6.1%}  (edge over SF: {r_score - s_score:+.1%})")
-        print(f"  {'PureStockfish     vs Maia':<32} {s_score:>6.1%}  (control)")
+            print(f"  {label:<34} {r_score:>6.1%}  (edge over SF: {r_score - s_score:+.1%})")
+        print(f"  {'PureStockfish          vs Maia':<34} {s_score:>6.1%}  (control)")
         print()
 
-    for bot in (maia, baseline_t0, baseline_t05, baseline_t1):
+    for bot in (maia, baseline_t1):
         try: bot.quit()
         except Exception: pass
     maia_oracle.quit()
