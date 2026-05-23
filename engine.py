@@ -258,7 +258,13 @@ class NettlesomeBot:
                  # uncertainty). Disabled when puzzle_mode=False (default).
                  puzzle_mode=False,
                  min_eval_cost=0.0, min_gap=0.0, min_gap_ratio=0.0,
-                 p_maia_min=0.0, p_maia_max=1.0):
+                 p_maia_min=0.0, p_maia_max=1.0,
+                 # Post-trap weakness: when the opponent finds our SF #1
+                 # reply (solves the puzzle), Stonefish switches to a
+                 # weaker baseline for the next `post_trap_duration` of
+                 # its own moves. Lets us amplify the consequence of a
+                 # solved trap so "find 3-of-5" actually converts to wins.
+                 post_trap_baseline=None, post_trap_duration=5):
         self.engine = engine
         self.num_candidates = num_candidates
         self.num_responses = num_responses
@@ -281,15 +287,21 @@ class NettlesomeBot:
         self.min_gap_ratio = min_gap_ratio
         self.p_maia_min = p_maia_min
         self.p_maia_max = p_maia_max
+        self.post_trap_baseline = post_trap_baseline
+        self.post_trap_duration = post_trap_duration
         self.stats: GameStats = GameStats()
         self._move_counter = 0
         self._pending_moment: Optional[NettlesomeMoment] = None
+        # Counter of the bot's own moves remaining in "post-trap weakness"
+        # mode. Decremented each choose_move call while > 0.
+        self._post_trap_remaining = 0
 
     def reset_stats(self, color: chess.Color):
         """Reset per-game stats. Call before a new game."""
         self.stats = GameStats(color=color)
         self._move_counter = 0
         self._pending_moment = None
+        self._post_trap_remaining = 0
 
     def note_opponent_reply(self, opponent_move: chess.Move):
         """Record that the opponent just played `opponent_move`. If we set a
@@ -303,6 +315,12 @@ class NettlesomeBot:
             self._pending_moment.opponent_rank = idx + 1
         except ValueError:
             self._pending_moment.opponent_rank = 4  # outside the top-N we tracked
+        # If the opponent FOUND our trap (played SF #1 reply), trigger
+        # post-trap weakness: Stonefish plays its weaker post_trap_baseline
+        # for the next N of its own moves so the opponent can convert.
+        if (self._pending_moment.opponent_rank == 1
+                and self.post_trap_baseline is not None):
+            self._post_trap_remaining = self.post_trap_duration
         self._pending_moment = None
 
     def choose_move(self, board):
@@ -321,6 +339,12 @@ class NettlesomeBot:
           fit the eval_cost budget.
         """
         self._move_counter += 1
+
+        # Post-trap weakness: if the opponent just solved one of our traps,
+        # play the weaker baseline for a few moves to let them convert.
+        if self._post_trap_remaining > 0 and self.post_trap_baseline is not None:
+            self._post_trap_remaining -= 1
+            return self.post_trap_baseline.choose_move(board)
 
         candidates = get_top_moves(self.engine, board,
                                    num_moves=self.num_candidates,
@@ -779,32 +803,40 @@ if __name__ == "__main__":
     from maia_policy import MaiaPolicyEngine
     maia_oracle = MaiaPolicyEngine(maia_weights, rating=maia_rating)
 
-    # Baseline = stochastic Maia 1900 (T=1) -- the calibration sweet spot
-    # from the previous tournament where Stonefish becomes beatable.
+    # Baseline (between traps) = stochastic Maia 1900 (T=1).
     baseline_t1 = MaiaBot(maia_weights, rating=maia_rating, temperature=1.0, seed=3)
 
-    # Relaxed puzzle-filter Stonefish. Plays a trap only when the position
-    # meets every filter condition simultaneously; otherwise plays its
-    # Maia baseline. Picks by P closest to 0.5 (maximum opponent
-    # uncertainty -- the real "puzzle moment of the game"). Thresholds
-    # tuned to yield ~3-6 moments per game while keeping per-trap stakes
-    # meaningful enough that finding 3-4 of 5 wins.
+    # Weaker baseline used briefly after the opponent solves a trap.
+    # Maia 1500 gives a real "shaken player" feeling -- same architecture,
+    # ~400 Elo lower.
+    weak_weights = "/home/user/.maia/maia-1500.pb.gz"
+    post_trap_bot = MaiaBot(weak_weights, rating=1500, temperature=1.0, seed=4)
+
+    # Stonefish+Puzzle with softer filter (~5 moments/game target) and
+    # post-trap weakness wired in.
     stonefish_puzzle = NettlesomeBot(
         engine, num_candidates=7, num_responses=3,
-        depth=depth, max_eval_cost=1.5,           # allow costlier traps
+        depth=depth, max_eval_cost=1.5,
         maia_oracle=maia_oracle, baseline_bot=baseline_t1,
         puzzle_mode=True,
-        min_eval_cost=0.25,                       # each find gives opp ~0.25p
-        min_gap=0.80,                             # each miss costs opp ~0.55p net
-        min_gap_ratio=2.0,                        # gap >= 2 * cost (asymmetric)
-        p_maia_min=0.20, p_maia_max=0.80,         # findable for 1900, not trivial
+        min_eval_cost=0.20,                       # ~5/game funnel
+        min_gap=0.60,
+        min_gap_ratio=1.7,
+        p_maia_min=0.15, p_maia_max=0.85,
+        post_trap_baseline=post_trap_bot,         # Maia 1500 after a found trap
+        post_trap_duration=5,                     # for the next 5 own moves
     )
 
-    # Loose-EV Stonefish at T=1 baseline for direct comparison
-    stonefish_ev_t1 = NettlesomeBot(
+    # Same configuration without post-trap weakness -- isolate the
+    # contribution of the weakened-after-found lever.
+    stonefish_puzzle_no_weak = NettlesomeBot(
         engine, num_candidates=7, num_responses=3,
-        depth=depth, max_eval_cost=1.0,
+        depth=depth, max_eval_cost=1.5,
         maia_oracle=maia_oracle, baseline_bot=baseline_t1,
+        puzzle_mode=True,
+        min_eval_cost=0.20, min_gap=0.60, min_gap_ratio=1.7,
+        p_maia_min=0.15, p_maia_max=0.85,
+        # no post_trap_baseline
     )
 
     stockfish = PureStockfishBot(engine, depth=depth)
@@ -813,9 +845,9 @@ if __name__ == "__main__":
     all_results = {}
 
     matchups = [
-        ("Stonefish+Puzzle (T=1) vs Maia", stonefish_puzzle, maia),
-        ("Stonefish+EV     (T=1) vs Maia", stonefish_ev_t1,  maia),
-        ("PureStockfish          vs Maia", stockfish,        maia),
+        ("Stonefish+Puzzle+Weak  vs Maia", stonefish_puzzle,         maia),
+        ("Stonefish+Puzzle       vs Maia", stonefish_puzzle_no_weak, maia),
+        ("PureStockfish          vs Maia", stockfish,                maia),
     ]
 
     for label, bot_a, bot_b in matchups:
@@ -843,8 +875,8 @@ if __name__ == "__main__":
     s = all_results.get("PureStockfish          vs Maia")
     if s:
         s_score = (s["bot_a_wins"] + 0.5 * s["draws"]) / s["total_games"]
-        for label in ("Stonefish+Puzzle (T=1) vs Maia",
-                      "Stonefish+EV     (T=1) vs Maia"):
+        for label in ("Stonefish+Puzzle+Weak  vs Maia",
+                      "Stonefish+Puzzle       vs Maia"):
             r = all_results.get(label)
             if not r:
                 continue
@@ -853,7 +885,7 @@ if __name__ == "__main__":
         print(f"  {'PureStockfish          vs Maia':<34} {s_score:>6.1%}  (control)")
         print()
 
-    for bot in (maia, baseline_t1):
+    for bot in (maia, baseline_t1, post_trap_bot):
         try: bot.quit()
         except Exception: pass
     maia_oracle.quit()
