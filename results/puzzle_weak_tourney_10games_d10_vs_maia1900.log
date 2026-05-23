@@ -1,0 +1,425 @@
+Nettlesome Chess Engine Simulation
+Games per matchup: 10, Depth: 10
+Stockfish: /usr/games/stockfish
+Maia weights: /home/user/.maia/maia-1900.pb.gz (rating 1900)
+
+============================================================
+MATCHUP: Stonefish+Puzzle+Weak  vs Maia
+============================================================
+  [G1/10] W=Nettlesome+Puzzle/Maia1900(d=10,c=7,ec=1.5) vs B=Maia1900
+    [G1/10] starting
+    [G1/10] ply  11 W: e4
+    [G1/10] ply  21 W: Qd1
+    [G1/10] ply  31 W: Qh3
+    [G1/10] ply  41 W: b3
+    [G1/10] ply  51 W: Kc2
+    [G1/10] ply  55 W: Qd7+ [N! cost=0.99 gap=2.07]
+    [G1/10] ply  65 W: Qxe7+
+    [G1/10] ply  75 W: Qxb6
+    [G1/10] ply  85 W: Qc5+
+    [G1/10] ply  95 W: Qg5#
+  Game 1: Nettlesome+Puzzle/Maia1900(d=10,c=7,ec=1.5) wins in 95 moves (14.5s)  | nettlesome: 1 moments, opp-found-top=0/1 (0%), avg-cost=0.99p, avg-gap=2.07p
+  [G2/10] W=Maia1900 vs B=Nettlesome+Puzzle/Maia1900(d=10,c=7,ec=1.5)
+    [G2/10] starting
+    [G2/10] ply  11 W: Bd3
+    [G2/10] ply  21 W: Bd3
+    [G2/10] ply  31 W: Kxf2
+    [G2/10] ply  41 W: hxg4
+    [G2/10] ply  51 W: Qd3
+    [G2/10] ply  61 W: Rd1
+    [G2/10] ply  71 W: d5
+    [G2/10] ply  72 B: Rxc6 [N! cost=0.90 gap=2.10]
+    [G2/10] ply  82 B: Bf6
+    [G2/10] ply  92 B: Kxc6
+    [G2/10] ply 102 B: Ke8
+    [G2/10] ply 108 B: Ke7 [N! cost=0.32 gap=10.55]
+    [G2/10] ply 118 B: Kd4
+    [G2/10] ply 128 B: Ke3
+    [G2/10] ply 138 B: Kd5
+    [G2/10] ply 148 B: Ka3
+    [G2/10] ply 158 B: Kc6
+  Game 2: Maia1900 wins in 161 moves (19.5s)  | nettlesome: 2 moments, opp-found-top=2/2 (100%), avg-cost=0.61p, avg-gap=6.33p
+  [G3/10] W=Nettlesome+Puzzle/Maia1900(d=10,c=7,ec=1.5) vs B=Maia1900
+    [G3/10] starting
+    [G3/10] ply  11 W: Nd2
+    [G3/10] ply  21 W: g5
+    [G3/10] ply  27 W: Bxd4 [N! cost=0.72 gap=4.69]
+    [G3/10] ply  37 W: Nh3
+    [G3/10] ply  47 W: Re1
+    [G3/10] ply  57 W: h4
+    [G3/10] ply  65 W: Kd4 [N! cost=0.36 gap=0.71]
+    [G3/10] ply  75 W: Nb4
+    [G3/10] ply  85 W: Nd5
+    [G3/10] ply  95 W: Nxb6
+    [G3/10] ply 105 W: Kd2
+    [G3/10] ply 115 W: Ke1
+    [G3/10] ply 123 W: Kd2 [N! cost=0.99 gap=2.24]
+    [G3/10] ply 133 W: Nxh2
+    [G3/10] ply 143 W: Kd2
+    [G3/10] ply 153 W: Ka3
+    [G3/10] ply 163 W: Kb3
+    [G3/10] ply 173 W: Kd2
+    [G3/10] ply 183 W: Ka5
+  Game 3: Maia1900 wins in 188 moves (13.6s)  | nettlesome: 3 moments, opp-found-top=1/3 (33%), avg-cost=0.69p, avg-gap=2.55p
+  [G4/10] W=Maia1900 vs B=Nettlesome+Puzzle/Maia1900(d=10,c=7,ec=1.5)
+    [G4/10] starting
+    [G4/10] ply  11 W: Nd2
+  Game 4: Nettlesome+Puzzle/Maia1900(d=10,c=7,ec=1.5) wins in 16 moves (4.2s)  | nettlesome: 0 moments, opp-found-top=0/0 (0%), avg-cost=0.00p, avg-gap=0.00p
+  [G5/10] W=Nettlesome+Puzzle/Maia1900(d=10,c=7,ec=1.5) vs B=Maia1900
+    [G5/10] starting
+    [G5/10] ply  11 W: Bxa6
+    [G5/10] ply  21 W: a4
+    [G5/10] ply  31 W: exd5
+    [G5/10] ply  37 W: g4 [N! cost=0.31 gap=0.87]
+    [G5/10] ply  47 W: Qf6
+    [G5/10] ply  57 W: Qxd7+
+  Game 5: Nettlesome+Puzzle/Maia1900(d=10,c=7,ec=1.5) wins in 59 moves (12.9s)  | nettlesome: 1 moments, opp-found-top=1/1 (100%), avg-cost=0.31p, avg-gap=0.87p
+  [G6/10] W=Maia1900 vs B=Nettlesome+Puzzle/Maia1900(d=10,c=7,ec=1.5)
+    [G6/10] starting
+    [G6/10] ply   2 B: d5 [N! cost=0.32 gap=0.72]
+    [G6/10] ply   6 B: fxe4 [N! cost=0.20 gap=0.85]
+    [G6/10] ply  16 B: g5
+    [G6/10] ply  20 B: Bh6 [N! cost=0.52 gap=0.92]
+    [G6/10] ply  26 B: Ke7 [N! cost=0.35 gap=3.64]
+    [G6/10] ply  36 B: Qd7
+    [G6/10] ply  46 B: Rf8
+    [G6/10] ply  56 B: Nfe5
+    [G6/10] ply  66 B: h4
+    [G6/10] ply  76 B: b5
+  Game 6: Maia1900 wins in 79 moves (8.4s)  | nettlesome: 4 moments, opp-found-top=0/4 (0%), avg-cost=0.35p, avg-gap=1.53p
+  [G7/10] W=Nettlesome+Puzzle/Maia1900(d=10,c=7,ec=1.5) vs B=Maia1900
+    [G7/10] starting
+    [G7/10] ply  11 W: Bc4
+    [G7/10] ply  17 W: Ne6 [N! cost=0.30 gap=3.90]
+    [G7/10] ply  27 W: Bh4
+  Game 7: Nettlesome+Puzzle/Maia1900(d=10,c=7,ec=1.5) wins in 31 moves (5.3s)  | nettlesome: 1 moments, opp-found-top=1/1 (100%), avg-cost=0.30p, avg-gap=3.90p
+  [G8/10] W=Maia1900 vs B=Nettlesome+Puzzle/Maia1900(d=10,c=7,ec=1.5)
+    [G8/10] starting
+    [G8/10] ply   2 B: d5 [N! cost=0.37 gap=0.75]
+    [G8/10] ply  12 B: c6
+    [G8/10] ply  22 B: Ke7
+    [G8/10] ply  32 B: Rhd8
+    [G8/10] ply  42 B: Kxf7
+    [G8/10] ply  52 B: Ne7
+    [G8/10] ply  62 B: Ne7
+    [G8/10] ply  72 B: Rd6
+    [G8/10] ply  82 B: Rxa7
+    [G8/10] ply  92 B: Kf6
+    [G8/10] ply 100 B: Ke4 [N! cost=0.43 gap=1.05]
+    [G8/10] ply 110 B: e5
+    [G8/10] ply 120 B: Rf3+
+    [G8/10] ply 122 B: Kg3 [N! cost=0.60 gap=3.66]
+    [G8/10] ply 132 B: Kf4
+    [G8/10] ply 136 B: Kf3 [N! cost=0.33 gap=3.82]
+    [G8/10] ply 138 B: Kg3 [N! cost=0.80 gap=1.87]
+    [G8/10] ply 148 B: Rxh5
+    [G8/10] ply 158 B: Nd5
+    [G8/10] ply 168 B: Nc3+
+    [G8/10] ply 178 B: Kb3
+  Game 8: Draw in 178 moves (23.2s)  | nettlesome: 5 moments, opp-found-top=1/5 (20%), avg-cost=0.51p, avg-gap=2.23p
+  [G9/10] W=Nettlesome+Puzzle/Maia1900(d=10,c=7,ec=1.5) vs B=Maia1900
+    [G9/10] starting
+    [G9/10] ply  11 W: Bc4
+    [G9/10] ply  21 W: Bg5
+    [G9/10] ply  27 W: Bxf6 [N! cost=1.05 gap=2.14]
+    [G9/10] ply  37 W: Kd2
+    [G9/10] ply  43 W: Ke2 [N! cost=1.34 gap=2.89]
+    [G9/10] ply  45 W: Qh6+ [N! cost=0.22 gap=1.94]
+  Game 9: Maia1900 wins in 52 moves (13.6s)  | nettlesome: 3 moments, opp-found-top=1/3 (33%), avg-cost=0.87p, avg-gap=2.32p
+  [G10/10] W=Maia1900 vs B=Nettlesome+Puzzle/Maia1900(d=10,c=7,ec=1.5)
+    [G10/10] starting
+    [G10/10] ply  11 W: Bb2
+    [G10/10] ply  21 W: Nb5
+    [G10/10] ply  22 B: Be5 [N! cost=0.33 gap=0.65]
+    [G10/10] ply  32 B: Nf3+
+    [G10/10] ply  40 B: d4 [N! cost=1.15 gap=2.08]
+    [G10/10] ply  50 B: Qd6
+    [G10/10] ply  60 B: Qxc2
+    [G10/10] ply  62 B: Qd3 [N! cost=0.69 gap=1.27]
+    [G10/10] ply  72 B: Re2
+  Game 10: Nettlesome+Puzzle/Maia1900(d=10,c=7,ec=1.5) wins in 74 moves (9.2s)  | nettlesome: 3 moments, opp-found-top=2/3 (67%), avg-cost=0.72p, avg-gap=1.33p
+
+============================================================
+RESULTS: Nettlesome+Puzzle/Maia1900(d=10,c=7,ec=1.5) vs Maia1900
+============================================================
+  Nettlesome+Puzzle/Maia1900(d=10,c=7,ec=1.5): 5W / 1D / 4L
+  Score: 55.0%
+  Avg game length: 93 moves
+  ---
+  Nettlesome diagnostics across 10 games:
+    moments played:       23 (2.3/game)
+    opp found #1 reply:   9/23 (39%)
+    opp in top-3 reply:   16/23 (70%)
+    avg eval cost paid:   0.59 pawns
+    avg gap 1-2 created:  2.41 pawns
+    rank distribution:    #1=9, #2=4, #3=3, miss=7
+============================================================
+
+============================================================
+MATCHUP: Stonefish+Puzzle       vs Maia
+============================================================
+  [G1/10] W=Nettlesome+Puzzle/Maia1900(d=10,c=7,ec=1.5) vs B=Maia1900
+    [G1/10] starting
+    [G1/10] ply  11 W: Nf3
+    [G1/10] ply  13 W: Nxd4 [N! cost=0.80 gap=1.72]
+    [G1/10] ply  23 W: Be3
+    [G1/10] ply  33 W: Kf2
+    [G1/10] ply  39 W: b4 [N! cost=0.61 gap=1.41]
+    [G1/10] ply  49 W: Kxf3
+    [G1/10] ply  59 W: Ned6
+    [G1/10] ply  69 W: Kf2
+    [G1/10] ply  79 W: Nxa7
+    [G1/10] ply  89 W: Nc6+
+    [G1/10] ply  99 W: Kxe3
+    [G1/10] ply 109 W: Kg4
+    [G1/10] ply 119 W: Ke3
+    [G1/10] ply 129 W: Kd3
+    [G1/10] ply 139 W: Kf2
+    [G1/10] ply 149 W: Ke2
+    [G1/10] ply 159 W: Ke1
+  Game 1: Maia1900 wins in 160 moves (13.2s)  | nettlesome: 2 moments, opp-found-top=1/2 (50%), avg-cost=0.71p, avg-gap=1.56p
+  [G2/10] W=Maia1900 vs B=Nettlesome+Puzzle/Maia1900(d=10,c=7,ec=1.5)
+    [G2/10] starting
+    [G2/10] ply  11 W: Bc4
+    [G2/10] ply  21 W: Qd2
+    [G2/10] ply  22 B: Nxd5 [N! cost=1.26 gap=2.54]
+    [G2/10] ply  26 B: Be6 [N! cost=1.00 gap=2.10]
+    [G2/10] ply  28 B: Nxg2+ [N! cost=0.38 gap=2.20]
+    [G2/10] ply  32 B: dxc3 [N! cost=0.47 gap=1.53]
+    [G2/10] ply  42 B: Qb2
+    [G2/10] ply  52 B: Qxd4
+    [G2/10] ply  56 B: Kg6 [N! cost=0.31 gap=2.06]
+    [G2/10] ply  66 B: Kg6
+    [G2/10] ply  76 B: a3
+    [G2/10] ply  86 B: Kg8
+    [G2/10] ply  96 B: Kg8
+  Game 2: Draw in 99 moves (12.6s)  | nettlesome: 5 moments, opp-found-top=1/5 (20%), avg-cost=0.68p, avg-gap=2.09p
+  [G3/10] W=Nettlesome+Puzzle/Maia1900(d=10,c=7,ec=1.5) vs B=Maia1900
+    [G3/10] starting
+    [G3/10] ply  11 W: d3
+    [G3/10] ply  13 W: dxe4 [N! cost=0.55 gap=1.03]
+    [G3/10] ply  23 W: Bf4
+    [G3/10] ply  33 W: Rd5
+    [G3/10] ply  43 W: Rxd8
+    [G3/10] ply  53 W: g4
+    [G3/10] ply  61 W: Nf5+ [N! cost=1.16 gap=2.40]
+    [G3/10] ply  71 W: Bxg5
+    [G3/10] ply  81 W: Nf5
+    [G3/10] ply  89 W: Nc8 [N! cost=0.23 gap=2.87]
+    [G3/10] ply  99 W: Nxb5+
+    [G3/10] ply 103 W: Ke3 [N! cost=0.42 gap=1.31]
+    [G3/10] ply 111 W: Nb5 [N! cost=0.43 gap=5.95]
+    [G3/10] ply 115 W: Nf5 [N! cost=0.81 gap=3.82]
+    [G3/10] ply 125 W: Nc2+
+    [G3/10] ply 135 W: Nh3
+    [G3/10] ply 145 W: Ng3
+    [G3/10] ply 155 W: Kg3
+    [G3/10] ply 165 W: Nc4
+    [G3/10] ply 175 W: Kd2
+    [G3/10] ply 185 W: Nd4
+    [G3/10] ply 195 W: Kd2
+  Game 3: Draw in 200 moves (26.2s)  | nettlesome: 6 moments, opp-found-top=4/6 (67%), avg-cost=0.60p, avg-gap=2.90p
+  [G4/10] W=Maia1900 vs B=Nettlesome+Puzzle/Maia1900(d=10,c=7,ec=1.5)
+    [G4/10] starting
+    [G4/10] ply   2 B: d5 [N! cost=0.33 gap=0.63]
+    [G4/10] ply  12 B: Nxc3
+    [G4/10] ply  22 B: c5 [N! cost=0.39 gap=0.95]
+    [G4/10] ply  32 B: Nxc4
+    [G4/10] ply  42 B: Bf8
+  Game 4: Nettlesome+Puzzle/Maia1900(d=10,c=7,ec=1.5) wins in 46 moves (10.8s)  | nettlesome: 2 moments, opp-found-top=2/2 (100%), avg-cost=0.36p, avg-gap=0.79p
+  [G5/10] W=Nettlesome+Puzzle/Maia1900(d=10,c=7,ec=1.5) vs B=Maia1900
+    [G5/10] starting
+    [G5/10] ply  11 W: f3 [N! cost=0.35 gap=2.16]
+    [G5/10] ply  21 W: Bd3
+    [G5/10] ply  23 W: Bxg6 [N! cost=0.30 gap=1.56]
+    [G5/10] ply  33 W: Rg6
+    [G5/10] ply  43 W: Ne2 [N! cost=0.37 gap=2.05]
+    [G5/10] ply  53 W: Kxe2
+    [G5/10] ply  55 W: Kd1 [N! cost=0.68 gap=2.07]
+  Game 5: Maia1900 wins in 62 moves (8.7s)  | nettlesome: 4 moments, opp-found-top=2/4 (50%), avg-cost=0.43p, avg-gap=1.96p
+  [G6/10] W=Maia1900 vs B=Nettlesome+Puzzle/Maia1900(d=10,c=7,ec=1.5)
+    [G6/10] starting
+    [G6/10] ply  11 W: Be3
+    [G6/10] ply  21 W: f4
+    [G6/10] ply  31 W: Qd1
+    [G6/10] ply  36 B: b4 [N! cost=0.23 gap=0.71]
+    [G6/10] ply  46 B: a5
+    [G6/10] ply  50 B: Kd7 [N! cost=0.52 gap=1.05]
+    [G6/10] ply  52 B: Kc6 [N! cost=0.70 gap=1.70]
+    [G6/10] ply  54 B: Bxf3+ [N! cost=0.63 gap=1.99]
+    [G6/10] ply  64 B: Re8 [N! cost=0.30 gap=1.16]
+  Game 6: Maia1900 wins in 73 moves (15.6s)  | nettlesome: 5 moments, opp-found-top=5/5 (100%), avg-cost=0.48p, avg-gap=1.32p
+  [G7/10] W=Nettlesome+Puzzle/Maia1900(d=10,c=7,ec=1.5) vs B=Maia1900
+    [G7/10] starting
+    [G7/10] ply  11 W: d4
+    [G7/10] ply  21 W: Qe2+
+    [G7/10] ply  31 W: Kd2 [N! cost=0.38 gap=0.96]
+    [G7/10] ply  41 W: Qb5+
+    [G7/10] ply  51 W: Na5+
+  Game 7: Nettlesome+Puzzle/Maia1900(d=10,c=7,ec=1.5) wins in 59 moves (8.7s)  | nettlesome: 1 moments, opp-found-top=0/1 (0%), avg-cost=0.38p, avg-gap=0.96p
+  [G8/10] W=Maia1900 vs B=Nettlesome+Puzzle/Maia1900(d=10,c=7,ec=1.5)
+    [G8/10] starting
+    [G8/10] ply  10 B: Bg4 [N! cost=0.21 gap=4.21]
+    [G8/10] ply  20 B: Nxd4
+    [G8/10] ply  30 B: Nf6
+    [G8/10] ply  40 B: Nxc4 [N! cost=0.82 gap=2.77]
+    [G8/10] ply  46 B: a5 [N! cost=0.39 gap=0.69]
+    [G8/10] ply  50 B: Rxe3 [N! cost=0.53 gap=4.72]
+    [G8/10] ply  60 B: Rb5
+    [G8/10] ply  70 B: c5
+    [G8/10] ply  74 B: Rd5 [N! cost=0.38 gap=0.81]
+    [G8/10] ply  84 B: fxg4
+    [G8/10] ply  94 B: Rd1
+    [G8/10] ply 104 B: Rxb6
+    [G8/10] ply 114 B: a3
+  Game 8: Nettlesome+Puzzle/Maia1900(d=10,c=7,ec=1.5) wins in 120 moves (18.6s)  | nettlesome: 5 moments, opp-found-top=2/5 (40%), avg-cost=0.47p, avg-gap=2.64p
+  [G9/10] W=Nettlesome+Puzzle/Maia1900(d=10,c=7,ec=1.5) vs B=Maia1900
+    [G9/10] starting
+    [G9/10] ply  11 W: Ne2
+    [G9/10] ply  21 W: a4
+    [G9/10] ply  25 W: Nxe7 [N! cost=0.37 gap=2.01]
+    [G9/10] ply  35 W: Bxf3 [N! cost=0.81 gap=2.24]
+    [G9/10] ply  45 W: Qxe6+
+    [G9/10] ply  55 W: Bg2 [N! cost=0.39 gap=1.62]
+    [G9/10] ply  61 W: Ke1 [N! cost=0.34 gap=0.61]
+    [G9/10] ply  71 W: Kd1
+    [G9/10] ply  81 W: Rf8+ [N! cost=1.22 gap=4.33]
+    [G9/10] ply  91 W: Bd3+
+    [G9/10] ply 101 W: Kd4
+    [G9/10] ply 107 W: Rb4 [N! cost=0.50 gap=0.96]
+    [G9/10] ply 111 W: Ke5 [N! cost=0.38 gap=0.86]
+    [G9/10] ply 121 W: Rg1+
+    [G9/10] ply 125 W: Rg2 [N! cost=1.05 gap=2.61]
+    [G9/10] ply 135 W: Kd6
+    [G9/10] ply 145 W: Ka7
+    [G9/10] ply 155 W: Kb5
+    [G9/10] ply 165 W: Kb2
+    [G9/10] ply 171 W: Kc2 [N! cost=0.25 gap=0.77]
+    [G9/10] ply 181 W: Kf2
+    [G9/10] ply 191 W: Ke2
+  Game 9: Draw in 200 moves (25.7s)  | nettlesome: 9 moments, opp-found-top=4/9 (44%), avg-cost=0.59p, avg-gap=1.78p
+  [G10/10] W=Maia1900 vs B=Nettlesome+Puzzle/Maia1900(d=10,c=7,ec=1.5)
+    [G10/10] starting
+    [G10/10] ply  11 W: c3
+    [G10/10] ply  20 B: fxe4 [N! cost=0.38 gap=1.53]
+    [G10/10] ply  30 B: Qa6+
+    [G10/10] ply  40 B: Qxd6
+  Game 10: Nettlesome+Puzzle/Maia1900(d=10,c=7,ec=1.5) wins in 48 moves (12.8s)  | nettlesome: 1 moments, opp-found-top=1/1 (100%), avg-cost=0.38p, avg-gap=1.53p
+
+============================================================
+RESULTS: Nettlesome+Puzzle/Maia1900(d=10,c=7,ec=1.5) vs Maia1900
+============================================================
+  Nettlesome+Puzzle/Maia1900(d=10,c=7,ec=1.5): 4W / 3D / 3L
+  Score: 55.0%
+  Avg game length: 107 moves
+  ---
+  Nettlesome diagnostics across 10 games:
+    moments played:       40 (4.0/game)
+    opp found #1 reply:   22/40 (55%)
+    opp in top-3 reply:   27/40 (68%)
+    avg eval cost paid:   0.54 pawns
+    avg gap 1-2 created:  1.97 pawns
+    rank distribution:    #1=22, #2=2, #3=3, miss=13
+============================================================
+
+============================================================
+MATCHUP: PureStockfish          vs Maia
+============================================================
+  [G1/10] W=PureStockfish(d=10) vs B=Maia1900
+    [G1/10] starting
+    [G1/10] ply  11 W: e3
+    [G1/10] ply  21 W: dxe6
+    [G1/10] ply  31 W: Bxg5
+    [G1/10] ply  41 W: Rd1
+    [G1/10] ply  51 W: Rxh7+
+  Game 1: PureStockfish(d=10) wins in 57 moves (0.6s)
+  [G2/10] W=Maia1900 vs B=PureStockfish(d=10)
+    [G2/10] starting
+    [G2/10] ply  11 W: Qa4
+    [G2/10] ply  21 W: bxc3
+    [G2/10] ply  31 W: exf5
+    [G2/10] ply  41 W: Bf3
+    [G2/10] ply  51 W: Kf1
+  Game 2: PureStockfish(d=10) wins in 58 moves (0.5s)
+  [G3/10] W=PureStockfish(d=10) vs B=Maia1900
+    [G3/10] starting
+    [G3/10] ply  11 W: d5
+    [G3/10] ply  21 W: Na3
+    [G3/10] ply  31 W: Nxd4
+    [G3/10] ply  41 W: gxh4
+  Game 3: PureStockfish(d=10) wins in 45 moves (0.5s)
+  [G4/10] W=Maia1900 vs B=PureStockfish(d=10)
+    [G4/10] starting
+    [G4/10] ply  11 W: Nf3
+    [G4/10] ply  21 W: Bd3
+    [G4/10] ply  31 W: g3
+    [G4/10] ply  41 W: Qg4
+  Game 4: PureStockfish(d=10) wins in 48 moves (0.5s)
+  [G5/10] W=PureStockfish(d=10) vs B=Maia1900
+    [G5/10] starting
+    [G5/10] ply  11 W: d5
+    [G5/10] ply  21 W: h5
+    [G5/10] ply  31 W: Rg1
+    [G5/10] ply  41 W: Qe4
+    [G5/10] ply  51 W: Bxg5
+  Game 5: PureStockfish(d=10) wins in 55 moves (0.5s)
+  [G6/10] W=Maia1900 vs B=PureStockfish(d=10)
+    [G6/10] starting
+    [G6/10] ply  11 W: Na3
+    [G6/10] ply  21 W: d3
+    [G6/10] ply  31 W: Qxc7
+    [G6/10] ply  41 W: Kf1
+  Game 6: PureStockfish(d=10) wins in 44 moves (0.5s)
+  [G7/10] W=PureStockfish(d=10) vs B=Maia1900
+    [G7/10] starting
+    [G7/10] ply  11 W: Be2
+    [G7/10] ply  21 W: Qb8
+    [G7/10] ply  31 W: Qa3
+    [G7/10] ply  41 W: gxh8=Q+
+  Game 7: PureStockfish(d=10) wins in 43 moves (0.5s)
+  [G8/10] W=Maia1900 vs B=PureStockfish(d=10)
+    [G8/10] starting
+    [G8/10] ply  11 W: dxc6
+    [G8/10] ply  21 W: Nxd7
+    [G8/10] ply  31 W: Qxd4
+    [G8/10] ply  41 W: fxe3
+    [G8/10] ply  51 W: Kh3
+  Game 8: PureStockfish(d=10) wins in 58 moves (0.5s)
+  [G9/10] W=PureStockfish(d=10) vs B=Maia1900
+    [G9/10] starting
+    [G9/10] ply  11 W: Nf3
+    [G9/10] ply  21 W: Nxe6
+    [G9/10] ply  31 W: dxe5
+    [G9/10] ply  41 W: Bd3#
+  Game 9: PureStockfish(d=10) wins in 41 moves (0.5s)
+  [G10/10] W=Maia1900 vs B=PureStockfish(d=10)
+    [G10/10] starting
+    [G10/10] ply  11 W: Nb3
+    [G10/10] ply  21 W: e3
+    [G10/10] ply  31 W: Bd2
+    [G10/10] ply  41 W: Bh3
+    [G10/10] ply  51 W: Kg2
+    [G10/10] ply  61 W: h4
+  Game 10: PureStockfish(d=10) wins in 62 moves (0.7s)
+
+============================================================
+RESULTS: PureStockfish(d=10) vs Maia1900
+============================================================
+  PureStockfish(d=10): 10W / 0D / 0L
+  Score: 100.0%
+  Avg game length: 51 moves
+============================================================
+
+======================================================================
+FINAL COMPARISON
+======================================================================
+Matchup                                  Score      W-D-L  AvgLen
+----------------------------------------------------------------------
+Stonefish+Puzzle+Weak  vs Maia          55.0%      5-1-4     93
+Stonefish+Puzzle       vs Maia          55.0%      4-3-3    107
+PureStockfish          vs Maia         100.0%     10-0-0     51
+
+  Stonefish+Puzzle+Weak  vs Maia      55.0%  (edge over SF: -45.0%)
+  Stonefish+Puzzle       vs Maia      55.0%  (edge over SF: -45.0%)
+  PureStockfish          vs Maia     100.0%  (control)
+
