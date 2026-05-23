@@ -250,7 +250,7 @@ class NettlesomeBot:
 
     def __init__(self, engine, num_candidates=10, num_responses=3,
                  depth=16, max_eval_cost=1.0, label="Nettlesome",
-                 maia_oracle=None):
+                 maia_oracle=None, baseline_bot=None):
         self.engine = engine
         self.num_candidates = num_candidates
         self.num_responses = num_responses
@@ -261,6 +261,12 @@ class NettlesomeBot:
         # expected-value scoring: EV = (1 - P_maia_top) * gap_1_2 - eval_cost,
         # and only deviates from SF #1 when some candidate has EV > 0.
         self.maia_oracle = maia_oracle
+        # Optional fallback bot for non-trap positions. When set, the bot
+        # plays baseline_bot.choose_move(board) on any move where no
+        # positive-EV trap is found (instead of SF #1). Useful for
+        # weakening overall play to a target rating while keeping the
+        # sharp traps the EV logic finds.
+        self.baseline_bot = baseline_bot
         self.stats: GameStats = GameStats()
         self._move_counter = 0
         self._pending_moment: Optional[NettlesomeMoment] = None
@@ -356,8 +362,12 @@ class NettlesomeBot:
             chosen_move = chosen_ms.move
 
             # If the best move is SF #1 (or no candidate has positive EV),
-            # don't sacrifice eval -- just play the principled move.
+            # we don't set a trap here. Fall back to the baseline_bot if
+            # one's been configured (e.g., Maia 1900 to dial down the bot's
+            # overall strength), otherwise play SF #1.
             if chosen_move == sf_top_move or chosen_ev <= 0.0:
+                if self.baseline_bot is not None:
+                    return self.baseline_bot.choose_move(board)
                 return sf_top_move
         else:
             # Legacy difficulty-score path (with hand-tuned cost penalty)
@@ -397,10 +407,13 @@ class NettlesomeBot:
     @property
     def name(self):
         ev_tag = "+EV" if self.maia_oracle is not None else ""
-        tag = "Tight" if self.max_eval_cost <= 0.5 else ""
-        if self.label != "Nettlesome":
-            return f"{self.label}{ev_tag}(d={self.depth},c={self.num_candidates},ec={self.max_eval_cost})"
-        return f"Nettlesome{tag}{ev_tag}(d={self.depth},c={self.num_candidates},ec={self.max_eval_cost})"
+        tight_tag = "Tight" if self.max_eval_cost <= 0.5 else ""
+        base_tag = ""
+        if self.baseline_bot is not None:
+            base_tag = f"/{getattr(self.baseline_bot, 'name', 'baseline')}"
+        base = self.label if self.label != "Nettlesome" else "Nettlesome"
+        return (f"{base}{tight_tag}{ev_tag}{base_tag}"
+                f"(d={self.depth},c={self.num_candidates},ec={self.max_eval_cost})")
 
 
 class RandomTopNBot:
@@ -725,27 +738,37 @@ if __name__ == "__main__":
     from maia_policy import MaiaPolicyEngine
     maia_oracle = MaiaPolicyEngine(maia_weights, rating=maia_rating)
 
-    nettlesome = NettlesomeBot(engine, num_candidates=7, num_responses=3,
-                                depth=depth, max_eval_cost=1.0)
-    nettlesome_ev = NettlesomeBot(engine, num_candidates=7, num_responses=3,
+    # Three baseline Maia bots at different temperatures. The bot plays its
+    # baseline on every non-trap move; the EV logic kicks in only when a
+    # positive-EV trap is available.
+    baseline_t0   = MaiaBot(maia_weights, rating=maia_rating, temperature=0.0, seed=1)
+    baseline_t05  = MaiaBot(maia_weights, rating=maia_rating, temperature=0.5, seed=2)
+    baseline_t1   = MaiaBot(maia_weights, rating=maia_rating, temperature=1.0, seed=3)
+
+    stonefish_t0  = NettlesomeBot(engine, num_candidates=7, num_responses=3,
                                   depth=depth, max_eval_cost=1.0,
-                                  maia_oracle=maia_oracle)
-    nettlesome_tight = NettlesomeBot(engine, num_candidates=7, num_responses=3,
-                                     depth=depth, max_eval_cost=0.3)
-    nettlesome_tight_ev = NettlesomeBot(engine, num_candidates=7, num_responses=3,
-                                        depth=depth, max_eval_cost=0.3,
-                                        maia_oracle=maia_oracle)
+                                  maia_oracle=maia_oracle,
+                                  baseline_bot=baseline_t0)
+    stonefish_t05 = NettlesomeBot(engine, num_candidates=7, num_responses=3,
+                                  depth=depth, max_eval_cost=1.0,
+                                  maia_oracle=maia_oracle,
+                                  baseline_bot=baseline_t05)
+    stonefish_t1  = NettlesomeBot(engine, num_candidates=7, num_responses=3,
+                                  depth=depth, max_eval_cost=1.0,
+                                  maia_oracle=maia_oracle,
+                                  baseline_bot=baseline_t1)
+
     stockfish = PureStockfishBot(engine, depth=depth)
-    maia = MaiaBot(maia_weights, rating=maia_rating)
+    # The opponent: stochastic Maia 1900 at T=1, separate seed
+    maia = MaiaBot(maia_weights, rating=maia_rating, temperature=1.0, seed=99)
 
     all_results = {}
 
     matchups = [
-        ("Nettlesome vs Maia",           nettlesome,          maia),
-        ("Nettlesome+EV vs Maia",        nettlesome_ev,       maia),
-        ("NettlesomeTight vs Maia",      nettlesome_tight,    maia),
-        ("NettlesomeTight+EV vs Maia",   nettlesome_tight_ev, maia),
-        ("PureStockfish vs Maia",        stockfish,           maia),
+        ("Stonefish (T=0)   vs Maia",   stonefish_t0,  maia),
+        ("Stonefish (T=0.5) vs Maia",   stonefish_t05, maia),
+        ("Stonefish (T=1.0) vs Maia",   stonefish_t1,  maia),
+        ("PureStockfish     vs Maia",   stockfish,     maia),
     ]
 
     for label, bot_a, bot_b in matchups:
@@ -770,19 +793,22 @@ if __name__ == "__main__":
         print(f"{label:<38} {score:>6.1%} {wdl:>10} {avg_len:>6.0f}")
 
     print()
-    s = all_results.get("PureStockfish vs Maia")
+    s = all_results.get("PureStockfish     vs Maia")
     if s:
         s_score = (s["bot_a_wins"] + 0.5 * s["draws"]) / s["total_games"]
-        for label in ("Nettlesome vs Maia", "Nettlesome+EV vs Maia",
-                      "NettlesomeTight vs Maia", "NettlesomeTight+EV vs Maia"):
+        for label in ("Stonefish (T=0)   vs Maia",
+                      "Stonefish (T=0.5) vs Maia",
+                      "Stonefish (T=1.0) vs Maia"):
             r = all_results.get(label)
             if not r:
                 continue
             r_score = (r["bot_a_wins"] + 0.5 * r["draws"]) / r["total_games"]
             print(f"  {label:<32} {r_score:>6.1%}  (edge over SF: {r_score - s_score:+.1%})")
-        print(f"  {'PureStockfish vs Maia':<32} {s_score:>6.1%}  (control)")
+        print(f"  {'PureStockfish     vs Maia':<32} {s_score:>6.1%}  (control)")
         print()
 
-    maia.quit()
+    for bot in (maia, baseline_t0, baseline_t05, baseline_t1):
+        try: bot.quit()
+        except Exception: pass
     maia_oracle.quit()
     engine.quit()
