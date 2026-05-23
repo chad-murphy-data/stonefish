@@ -188,11 +188,18 @@ def score_candidate_move(engine, board, candidate_move, num_responses=3, depth=1
     # If we're black, we WANT low eval
     
     sign = 1.0 if our_color == chess.WHITE else -1.0
-    
+
+    # Mate scores come out of get_top_moves as ±100 pawns (cp ±10000). Leaving
+    # those uncapped poisons gap_1_2 averages: a single mate-trap registers a
+    # 100-200p gap and drags every aggregate. Clamp at ±10p -- still huge
+    # enough that mate-traps dominate selection, but no longer outliers.
+    def _clamp(v, cap=10.0):
+        return max(-cap, min(cap, v))
+
     # Opponent's best response (from our perspective: worst for us)
-    best_resp = opponent_moves[0][1] * sign  # From our perspective
-    second_resp = opponent_moves[1][1] * sign if len(opponent_moves) > 1 else best_resp
-    third_resp = opponent_moves[2][1] * sign if len(opponent_moves) > 2 else second_resp
+    best_resp = _clamp(opponent_moves[0][1] * sign)
+    second_resp = _clamp(opponent_moves[1][1] * sign) if len(opponent_moves) > 1 else best_resp
+    third_resp = _clamp(opponent_moves[2][1] * sign) if len(opponent_moves) > 2 else second_resp
     
     # The opponent WANTS to minimize our eval (make best_resp as negative as possible for us)
     # If they miss the best response, the eval stays higher for us
