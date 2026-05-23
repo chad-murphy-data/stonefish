@@ -30,5 +30,5 @@ jobs:
           which stockfish
           stockfish <<< "uci" | head -5
 
-      - name: Run tests (2 self-play games)
-        run: python test_stonefish.py 2
+      - name: Run quick nettlesome test
+        run: python test_quick.py

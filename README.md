@@ -1,10 +1,14 @@
-# Nettlesome Chess Engine
+# Stonefish
 
 A chess bot that doesn't play the best move — it plays the move that's hardest for the opponent to respond to.
 
 ## The Idea
 
 For each candidate move, the bot evaluates the opponent's top responses. It picks the move where the gap between the opponent's best response and their 2nd/3rd best response is largest. Every move says "find the one right answer or suffer."
+
+> **Note**: The Maia-based beginner puzzle bot that briefly lived in this repo has been split out to
+> [puzzle-bot](https://github.com/chad-murphy-data/puzzle-bot). Stonefish is now exclusively the
+> divergence-based bot described above.
 
 ## Setup
 
