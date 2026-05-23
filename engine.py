@@ -80,6 +80,9 @@ class NettlesomeMoment:
     top_response_ucis: List[str] = field(default_factory=list)  # opponent's top-N replies (UCI)
     opponent_reply_uci: Optional[str] = None  # what opponent actually played
     opponent_rank: Optional[int] = None       # 1=found #1, 2=#2, 3=#3, 4=outside top-3
+    # Maia-EV scoring fields. Populated only when a maia_oracle is wired in.
+    p_maia_top: Optional[float] = None         # P(Maia plays SF #1 reply)
+    ev: Optional[float] = None                 # (1 - p_maia_top) * gap_1_2 - eval_cost
 
 
 @dataclass
@@ -246,13 +249,18 @@ class NettlesomeBot:
     NETTLESOME_MIN_COST = 0.05
 
     def __init__(self, engine, num_candidates=10, num_responses=3,
-                 depth=16, max_eval_cost=1.0, label="Nettlesome"):
+                 depth=16, max_eval_cost=1.0, label="Nettlesome",
+                 maia_oracle=None):
         self.engine = engine
         self.num_candidates = num_candidates
         self.num_responses = num_responses
         self.depth = depth
         self.max_eval_cost = max_eval_cost  # Max pawns we'll sacrifice for difficulty
         self.label = label
+        # Optional MaiaPolicyEngine. When set, choose_move switches to
+        # expected-value scoring: EV = (1 - P_maia_top) * gap_1_2 - eval_cost,
+        # and only deviates from SF #1 when some candidate has EV > 0.
+        self.maia_oracle = maia_oracle
         self.stats: GameStats = GameStats()
         self._move_counter = 0
         self._pending_moment: Optional[NettlesomeMoment] = None
@@ -278,14 +286,25 @@ class NettlesomeBot:
         self._pending_moment = None
 
     def choose_move(self, board):
-        """Choose the most nettlesome move."""
+        """Choose the most nettlesome move.
+
+        Two scoring paths depending on whether a Maia oracle is wired in:
+
+        - With oracle: expected-value scoring. For each candidate trap we
+          ask Maia for its policy on board-after-our-move, look up the
+          probability Maia plays SF's #1 reply, and compute
+              EV = (1 - p_maia_top) * gap_1_2 - eval_cost
+          Play the highest-EV candidate; if none has EV > 0, play SF #1.
+
+        - Without oracle: legacy difficulty scoring with an eval-cost
+          penalty. Picks the highest-difficulty candidate among those that
+          fit the eval_cost budget.
+        """
         self._move_counter += 1
 
-        # Get our top candidate moves
         candidates = get_top_moves(self.engine, board,
                                    num_moves=self.num_candidates,
                                    depth=self.depth)
-
         if not candidates:
             return random.choice(list(board.legal_moves))
 
@@ -293,28 +312,61 @@ class NettlesomeBot:
         sign = 1.0 if board.turn == chess.WHITE else -1.0
         best_eval_for_us = sf_top_eval * sign
 
-        # Score each candidate by opponent difficulty
-        scored = []
+        # Score each candidate (response evals + raw gaps)
+        scored = []  # list of (MoveScore, eval_cost)
         for move, eval_cp in candidates:
             eval_for_us = eval_cp * sign
-
             eval_cost = best_eval_for_us - eval_for_us
             if eval_cost > self.max_eval_cost:
                 continue
-
             ms = score_candidate_move(self.engine, board, move,
                                       self.num_responses, self.depth)
             ms.own_eval = eval_for_us
-            # Penalize moves that cost us eval, but not too harshly
-            ms.difficulty_score -= eval_cost * 0.5
             scored.append((ms, eval_cost))
 
         if not scored:
             return sf_top_move
 
-        scored.sort(key=lambda x: x[0].difficulty_score, reverse=True)
-        chosen_ms, chosen_cost = scored[0]
-        chosen_move = chosen_ms.move
+        if self.maia_oracle is not None:
+            # EV path: ask Maia for the probability of finding SF #1 reply
+            # after we play each candidate, then pick the highest-EV trap.
+            ev_scored = []  # (ms, eval_cost, p_maia_top, ev)
+            for ms, eval_cost in scored:
+                gap = ms.second_response_eval - ms.best_response_eval
+                if ms.move == sf_top_move:
+                    # The control: deviation gain is 0 by definition.
+                    ev_scored.append((ms, eval_cost, None, 0.0))
+                    continue
+                # Probe Maia at the position we'd reach after our move
+                next_board = board.copy()
+                next_board.push(ms.move)
+                if next_board.is_game_over():
+                    # No reply means no trap value -- EV is just -eval_cost
+                    ev_scored.append((ms, eval_cost, None, -eval_cost))
+                    continue
+                policy = self.maia_oracle.predict_policy(next_board)
+                sf_top_reply = ms.top_response_moves[0] if ms.top_response_moves else None
+                p_top = policy.get(sf_top_reply, 0.0) if sf_top_reply else 0.0
+                ev = (1.0 - p_top) * gap - eval_cost
+                ev_scored.append((ms, eval_cost, p_top, ev))
+
+            # Sort by EV descending. Ties broken by lower cost.
+            ev_scored.sort(key=lambda x: (-x[3], x[1]))
+            chosen_ms, chosen_cost, chosen_p, chosen_ev = ev_scored[0]
+            chosen_move = chosen_ms.move
+
+            # If the best move is SF #1 (or no candidate has positive EV),
+            # don't sacrifice eval -- just play the principled move.
+            if chosen_move == sf_top_move or chosen_ev <= 0.0:
+                return sf_top_move
+        else:
+            # Legacy difficulty-score path (with hand-tuned cost penalty)
+            for ms, eval_cost in scored:
+                ms.difficulty_score -= eval_cost * 0.5
+            scored.sort(key=lambda x: x[0].difficulty_score, reverse=True)
+            chosen_ms, chosen_cost = scored[0]
+            chosen_move = chosen_ms.move
+            chosen_p, chosen_ev = None, None
 
         # Did we set a nettlesome trap? (passed up SF #1 for a costlier move)
         if chosen_move != sf_top_move and chosen_cost >= self.NETTLESOME_MIN_COST:
@@ -326,7 +378,6 @@ class NettlesomeBot:
                 sf_san = board.san(sf_top_move)
             except Exception:
                 sf_san = sf_top_move.uci()
-
             gap = chosen_ms.second_response_eval - chosen_ms.best_response_eval
             moment = NettlesomeMoment(
                 move_num=self._move_counter,
@@ -335,6 +386,8 @@ class NettlesomeBot:
                 eval_cost=round(chosen_cost, 3),
                 gap_1_2=round(gap, 3),
                 top_response_ucis=[m.uci() for m in chosen_ms.top_response_moves],
+                p_maia_top=round(chosen_p, 4) if chosen_p is not None else None,
+                ev=round(chosen_ev, 3) if chosen_ev is not None else None,
             )
             self.stats.moments.append(moment)
             self._pending_moment = moment
@@ -343,10 +396,11 @@ class NettlesomeBot:
 
     @property
     def name(self):
+        ev_tag = "+EV" if self.maia_oracle is not None else ""
         tag = "Tight" if self.max_eval_cost <= 0.5 else ""
         if self.label != "Nettlesome":
-            return f"{self.label}(d={self.depth},c={self.num_candidates},ec={self.max_eval_cost})"
-        return f"Nettlesome{tag}(d={self.depth},c={self.num_candidates},ec={self.max_eval_cost})"
+            return f"{self.label}{ev_tag}(d={self.depth},c={self.num_candidates},ec={self.max_eval_cost})"
+        return f"Nettlesome{tag}{ev_tag}(d={self.depth},c={self.num_candidates},ec={self.max_eval_cost})"
 
 
 class RandomTopNBot:
@@ -656,23 +710,32 @@ if __name__ == "__main__":
     engine = chess.engine.SimpleEngine.popen_uci(STOCKFISH_PATH)
     engine.configure({"Threads": 2, "Hash": 256})
 
+    # MaiaPolicyEngine drives lc0 directly to expose per-move policy
+    # probabilities. The +EV bots use it during move selection.
+    from maia_policy import MaiaPolicyEngine
+    maia_oracle = MaiaPolicyEngine(maia_weights, rating=maia_rating)
+
     nettlesome = NettlesomeBot(engine, num_candidates=7, num_responses=3,
                                 depth=depth, max_eval_cost=1.0)
+    nettlesome_ev = NettlesomeBot(engine, num_candidates=7, num_responses=3,
+                                  depth=depth, max_eval_cost=1.0,
+                                  maia_oracle=maia_oracle)
     nettlesome_tight = NettlesomeBot(engine, num_candidates=7, num_responses=3,
                                      depth=depth, max_eval_cost=0.3)
+    nettlesome_tight_ev = NettlesomeBot(engine, num_candidates=7, num_responses=3,
+                                        depth=depth, max_eval_cost=0.3,
+                                        maia_oracle=maia_oracle)
     stockfish = PureStockfishBot(engine, depth=depth)
-    random_top5 = RandomTopNBot(engine, top_n=5, depth=depth)
     maia = MaiaBot(maia_weights, rating=maia_rating)
 
     all_results = {}
 
     matchups = [
-        ("Nettlesome vs Maia",      nettlesome,       maia),
-        ("NettlesomeTight vs Maia", nettlesome_tight, maia),
-        ("PureStockfish vs Maia",   stockfish,        maia),
-        ("Nettlesome vs RandomTop5",      nettlesome,       random_top5),
-        ("NettlesomeTight vs RandomTop5", nettlesome_tight, random_top5),
-        ("PureStockfish vs RandomTop5",   stockfish,        random_top5),
+        ("Nettlesome vs Maia",           nettlesome,          maia),
+        ("Nettlesome+EV vs Maia",        nettlesome_ev,       maia),
+        ("NettlesomeTight vs Maia",      nettlesome_tight,    maia),
+        ("NettlesomeTight+EV vs Maia",   nettlesome_tight_ev, maia),
+        ("PureStockfish vs Maia",        stockfish,           maia),
     ]
 
     for label, bot_a, bot_b in matchups:
@@ -697,19 +760,19 @@ if __name__ == "__main__":
         print(f"{label:<38} {score:>6.1%} {wdl:>10} {avg_len:>6.0f}")
 
     print()
-    for opp in ("Maia", "RandomTop5"):
-        n = all_results.get(f"Nettlesome vs {opp}")
-        nt = all_results.get(f"NettlesomeTight vs {opp}")
-        s = all_results.get(f"PureStockfish vs {opp}")
-        if not (n and nt and s): continue
-        n_score = (n["bot_a_wins"] + 0.5 * n["draws"]) / n["total_games"]
-        nt_score = (nt["bot_a_wins"] + 0.5 * nt["draws"]) / nt["total_games"]
+    s = all_results.get("PureStockfish vs Maia")
+    if s:
         s_score = (s["bot_a_wins"] + 0.5 * s["draws"]) / s["total_games"]
-        print(f"vs {opp}:")
-        print(f"    Nettlesome:      {n_score:.1%}  (edge over SF: {n_score - s_score:+.1%})")
-        print(f"    NettlesomeTight: {nt_score:.1%}  (edge over SF: {nt_score - s_score:+.1%})")
-        print(f"    PureStockfish:   {s_score:.1%}  (control)")
+        for label in ("Nettlesome vs Maia", "Nettlesome+EV vs Maia",
+                      "NettlesomeTight vs Maia", "NettlesomeTight+EV vs Maia"):
+            r = all_results.get(label)
+            if not r:
+                continue
+            r_score = (r["bot_a_wins"] + 0.5 * r["draws"]) / r["total_games"]
+            print(f"  {label:<32} {r_score:>6.1%}  (edge over SF: {r_score - s_score:+.1%})")
+        print(f"  {'PureStockfish vs Maia':<32} {s_score:>6.1%}  (control)")
         print()
 
     maia.quit()
+    maia_oracle.quit()
     engine.quit()
