@@ -797,7 +797,7 @@ if __name__ == "__main__":
         min_eval_cost=0.25,                       # each find gives opp ~0.25p
         min_gap=0.80,                             # each miss costs opp ~0.55p net
         min_gap_ratio=2.0,                        # gap >= 2 * cost (asymmetric)
-        p_maia_min=0.20, p_maia_max=0.70,         # findable for 1900, not trivial
+        p_maia_min=0.20, p_maia_max=0.80,         # findable for 1900, not trivial
     )
 
     # Loose-EV Stonefish at T=1 baseline for direct comparison
