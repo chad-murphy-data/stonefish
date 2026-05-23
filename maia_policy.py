@@ -115,6 +115,31 @@ class MaiaPolicyEngine:
         """Convenience: probability of a specific move."""
         return self.predict_policy(board).get(move, 0.0)
 
+    def sample_move(self, board: chess.Board, temperature: float = 1.0,
+                    rng=None) -> chess.Move:
+        """Sample a move from Maia's policy at the given temperature.
+
+        temperature = 1.0: sample directly from the trained policy
+                         (matches how Maia is meant to model humans).
+        temperature < 1.0: concentrates toward the argmax (more peaky).
+        temperature <= 0:  deterministic argmax (same as predict_top).
+        """
+        policy = self.predict_policy(board)
+        if not policy:
+            return next(iter(board.legal_moves))
+        if temperature <= 0:
+            return max(policy, key=policy.get)
+        import random as _random
+        rng = rng or _random
+        moves = list(policy.keys())
+        # Apply temperature: p_i ** (1/T), then renormalize.
+        weights = [max(p, 1e-12) ** (1.0 / temperature) for p in policy.values()]
+        total = sum(weights)
+        if total <= 0:
+            return max(policy, key=policy.get)
+        weights = [w / total for w in weights]
+        return rng.choices(moves, weights=weights, k=1)[0]
+
     def quit(self):
         try:
             if self.proc.poll() is None:

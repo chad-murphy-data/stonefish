@@ -463,40 +463,50 @@ class PureStockfishBot:
 
 
 class MaiaBot:
-    """Wraps lc0 + a Maia weights file as a UCI engine playing partner.
+    """Wraps Maia (lc0 + Maia weights) as a stochastic playing partner.
 
-    Maia models output a policy distribution over moves trained to match
-    human play at a specific Elo. With `nodes=1` lc0 just samples the
-    policy head -- exactly how Maia is meant to be evaluated.
+    Maia is trained to predict the move a player at a given Elo would make.
+    Its output is a policy distribution over legal moves. To model real
+    human variance, we *sample* from that distribution rather than picking
+    the argmax -- the way lc0 with nodes=1 would.
+
+    temperature controls how peaked the sampling is:
+        1.0 (default) -- sample directly from the trained policy
+        < 1.0         -- bias toward the argmax (more deterministic)
+        <= 0          -- always pick the argmax (legacy behavior)
     """
 
     def __init__(self, weights_path, rating=1900, lc0_path="lc0",
-                 backend="eigen", threads=1, nodes=1):
+                 backend="eigen", threads=1, temperature=1.0, seed=None):
+        from maia_policy import MaiaPolicyEngine
+        import random as _random
         self.weights_path = weights_path
         self.rating = rating
-        self.nodes = nodes
-        self._engine = chess.engine.SimpleEngine.popen_uci([
-            lc0_path,
-            f"--weights={weights_path}",
-            f"--backend={backend}",
-            f"--threads={threads}",
-        ])
+        self.temperature = temperature
+        self._rng = _random.Random(seed) if seed is not None else _random
+        self._policy_engine = MaiaPolicyEngine(
+            weights_path, lc0_path=lc0_path, backend=backend,
+            threads=threads, rating=rating,
+        )
 
     def choose_move(self, board):
-        result = self._engine.play(board, chess.engine.Limit(nodes=self.nodes))
-        if result.move is None:
-            return random.choice(list(board.legal_moves))
-        return result.move
+        if self.temperature <= 0:
+            return self._policy_engine.predict_top(board)
+        return self._policy_engine.sample_move(board, self.temperature, rng=self._rng)
 
     def quit(self):
         try:
-            self._engine.quit()
+            self._policy_engine.quit()
         except Exception:
             pass
 
     @property
     def name(self):
-        return f"Maia{self.rating}"
+        if self.temperature <= 0:
+            return f"Maia{self.rating}(argmax)"
+        if self.temperature == 1.0:
+            return f"Maia{self.rating}"
+        return f"Maia{self.rating}(T={self.temperature})"
 
 
 def play_game(white_bot, black_bot, max_moves=200, verbose=False, live=False,
