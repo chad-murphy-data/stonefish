@@ -783,19 +783,21 @@ if __name__ == "__main__":
     # from the previous tournament where Stonefish becomes beatable.
     baseline_t1 = MaiaBot(maia_weights, rating=maia_rating, temperature=1.0, seed=3)
 
-    # Strict puzzle-filter Stonefish. Plays a trap only when the position
+    # Relaxed puzzle-filter Stonefish. Plays a trap only when the position
     # meets every filter condition simultaneously; otherwise plays its
     # Maia baseline. Picks by P closest to 0.5 (maximum opponent
-    # uncertainty -- the real "puzzle moment of the game").
+    # uncertainty -- the real "puzzle moment of the game"). Thresholds
+    # tuned to yield ~3-6 moments per game while keeping per-trap stakes
+    # meaningful enough that finding 3-4 of 5 wins.
     stonefish_puzzle = NettlesomeBot(
         engine, num_candidates=7, num_responses=3,
         depth=depth, max_eval_cost=1.5,           # allow costlier traps
         maia_oracle=maia_oracle, baseline_bot=baseline_t1,
         puzzle_mode=True,
-        min_eval_cost=0.5,                        # each find gives opp ~0.5p
-        min_gap=1.5,                              # each miss costs opp ~1.0p (net)
+        min_eval_cost=0.25,                       # each find gives opp ~0.25p
+        min_gap=0.80,                             # each miss costs opp ~0.55p net
         min_gap_ratio=2.0,                        # gap >= 2 * cost (asymmetric)
-        p_maia_min=0.30, p_maia_max=0.70,         # findable for 1900, not trivial
+        p_maia_min=0.20, p_maia_max=0.70,         # findable for 1900, not trivial
     )
 
     # Loose-EV Stonefish at T=1 baseline for direct comparison
