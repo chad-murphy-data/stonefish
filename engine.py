@@ -258,6 +258,7 @@ class NettlesomeBot:
                  # uncertainty). Disabled when puzzle_mode=False (default).
                  puzzle_mode=False,
                  min_eval_cost=0.0, min_gap=0.0, min_gap_ratio=0.0,
+                 max_gap_ratio=float("inf"),
                  p_maia_min=0.0, p_maia_max=1.0,
                  # Post-trap weakness: when the opponent finds our SF #1
                  # reply (solves the puzzle), Stonefish switches to a
@@ -285,6 +286,7 @@ class NettlesomeBot:
         self.min_eval_cost = min_eval_cost
         self.min_gap = min_gap
         self.min_gap_ratio = min_gap_ratio
+        self.max_gap_ratio = max_gap_ratio
         self.p_maia_min = p_maia_min
         self.p_maia_max = p_maia_max
         self.post_trap_baseline = post_trap_baseline
@@ -410,8 +412,10 @@ class NettlesomeBot:
                     gap = ms.second_response_eval - ms.best_response_eval
                     if gap < self.min_gap:
                         continue
-                    if cost > 0 and (gap / cost) < self.min_gap_ratio:
-                        continue
+                    if cost > 0:
+                        ratio = gap / cost
+                        if ratio < self.min_gap_ratio or ratio > self.max_gap_ratio:
+                            continue
                     if not (self.p_maia_min <= p <= self.p_maia_max):
                         continue
                     filtered.append((ms, cost, p, ev))
@@ -585,6 +589,80 @@ class MaiaBot:
         if self.temperature == 1.0:
             return f"Maia{self.rating}"
         return f"Maia{self.rating}(T={self.temperature})"
+
+
+class EquilibriumBaselineBot:
+    """A baseline bot that targets a fixed eval-drift per move.
+
+    For each position it queries Stockfish for the top-N candidates with
+    evals, computes how much each one drops from SF's best (the "delta from
+    optimal"), and picks the candidate whose delta is closest to a target
+    (e.g., 0.1 pawns for a 1900-rated mimic). Among candidates near target,
+    prefers the one with the highest Maia policy probability so the move
+    still looks human-ish.
+
+    Result: between traps, Stonefish plays as if it's a player who makes a
+    consistent ~0.1p mistake each move. If the opponent does the same, eval
+    stays at the post-trap equilibrium and only trap moments shift it.
+    """
+
+    def __init__(self, sf_engine, maia_oracle, target_delta=0.1,
+                 tolerance=0.08, num_candidates=8, depth=10, rating=1900):
+        self.sf = sf_engine
+        self.maia_oracle = maia_oracle
+        self.target_delta = target_delta
+        self.tolerance = tolerance
+        self.num_candidates = num_candidates
+        self.depth = depth
+        self.rating = rating
+
+    def choose_move(self, board):
+        candidates = get_top_moves(self.sf, board,
+                                   num_moves=self.num_candidates,
+                                   depth=self.depth)
+        if not candidates:
+            return random.choice(list(board.legal_moves))
+
+        sign = 1.0 if board.turn == chess.WHITE else -1.0
+        sf_top_eval_for_us = candidates[0][1] * sign
+
+        # Maia policy for "looks human" weighting
+        try:
+            maia_policy = self.maia_oracle.predict_policy(board)
+        except Exception:
+            maia_policy = {}
+
+        # Score each candidate by how close its delta-from-optimal is to
+        # the target, plus a Maia-policy weighting.
+        scored = []
+        for move, eval_cp in candidates:
+            eval_for_us = eval_cp * sign
+            delta = sf_top_eval_for_us - eval_for_us  # >=0; how worse than SF top
+            delta_diff = abs(delta - self.target_delta)
+            maia_p = maia_policy.get(move, 0.0)
+            scored.append((move, delta_diff, maia_p))
+
+        # First-stage: candidates within `tolerance` of the target delta
+        near = [(m, p) for (m, dd, p) in scored if dd <= self.tolerance]
+        if near:
+            # Prefer the most Maia-natural among near-target candidates;
+            # break ties by lower delta_diff (closer to target).
+            near.sort(key=lambda x: (-x[1],))
+            # If the most-natural has zero Maia probability, fall through
+            # and pick the candidate closest to target instead.
+            if near[0][1] > 0:
+                return near[0][0]
+
+        # Fallback: just take the candidate whose delta is closest to target
+        scored.sort(key=lambda x: x[1])
+        return scored[0][0]
+
+    def quit(self):
+        pass
+
+    @property
+    def name(self):
+        return f"Equilibrium(target=-{self.target_delta:.2f}p,rating~{self.rating})"
 
 
 def play_game(white_bot, black_bot, max_moves=200, verbose=False, live=False,
@@ -803,40 +881,28 @@ if __name__ == "__main__":
     from maia_policy import MaiaPolicyEngine
     maia_oracle = MaiaPolicyEngine(maia_weights, rating=maia_rating)
 
-    # Baseline (between traps) = stochastic Maia 1900 (T=1).
-    baseline_t1 = MaiaBot(maia_weights, rating=maia_rating, temperature=1.0, seed=3)
-
-    # Weaker baseline used briefly after the opponent solves a trap.
-    # Maia 1500 gives a real "shaken player" feeling -- same architecture,
-    # ~400 Elo lower.
-    weak_weights = "/home/user/.maia/maia-1500.pb.gz"
-    post_trap_bot = MaiaBot(weak_weights, rating=1500, temperature=1.0, seed=4)
-
-    # Stonefish+Puzzle with softer filter (~5 moments/game target) and
-    # post-trap weakness wired in.
-    stonefish_puzzle = NettlesomeBot(
-        engine, num_candidates=7, num_responses=3,
-        depth=depth, max_eval_cost=1.5,
-        maia_oracle=maia_oracle, baseline_bot=baseline_t1,
-        puzzle_mode=True,
-        min_eval_cost=0.20,                       # ~5/game funnel
-        min_gap=0.60,
-        min_gap_ratio=1.7,
-        p_maia_min=0.15, p_maia_max=0.85,
-        post_trap_baseline=post_trap_bot,         # Maia 1500 after a found trap
-        post_trap_duration=5,                     # for the next 5 own moves
+    # Baseline (between traps) = Equilibrium SF + Maia flavor. Targets a
+    # -0.1p drift per move so opp at 1900 (which makes similar mistakes)
+    # naturally drifts toward eval stability between trap moments.
+    equilibrium_baseline = EquilibriumBaselineBot(
+        engine, maia_oracle, target_delta=0.1, depth=depth, rating=1900,
     )
 
-    # Same configuration without post-trap weakness -- isolate the
-    # contribution of the weakened-after-found lever.
-    stonefish_puzzle_no_weak = NettlesomeBot(
+    # Symmetric puzzle filter: gap is bounded BOTH above and below relative
+    # to cost, so each trap is near-symmetric (find ~ +X, miss ~ -X).
+    # That's what makes find-3-of-5 = clean win, find-2-of-5 = clean lose.
+    stonefish_v1 = NettlesomeBot(
         engine, num_candidates=7, num_responses=3,
         depth=depth, max_eval_cost=1.5,
-        maia_oracle=maia_oracle, baseline_bot=baseline_t1,
+        maia_oracle=maia_oracle, baseline_bot=equilibrium_baseline,
         puzzle_mode=True,
-        min_eval_cost=0.20, min_gap=0.60, min_gap_ratio=1.7,
-        p_maia_min=0.15, p_maia_max=0.85,
-        # no post_trap_baseline
+        min_eval_cost=0.25,
+        min_gap=0.50,
+        min_gap_ratio=1.8,                        # gap >= 1.8 * cost
+        max_gap_ratio=2.2,                        # gap <= 2.2 * cost
+        p_maia_min=0.20, p_maia_max=0.80,
+        # No post-trap weakness in v1 -- equilibrium baseline preserves
+        # the trap eval drift naturally.
     )
 
     stockfish = PureStockfishBot(engine, depth=depth)
@@ -845,9 +911,8 @@ if __name__ == "__main__":
     all_results = {}
 
     matchups = [
-        ("Stonefish+Puzzle+Weak  vs Maia", stonefish_puzzle,         maia),
-        ("Stonefish+Puzzle       vs Maia", stonefish_puzzle_no_weak, maia),
-        ("PureStockfish          vs Maia", stockfish,                maia),
+        ("Stonefish v1     vs Maia", stonefish_v1, maia),
+        ("PureStockfish    vs Maia", stockfish,    maia),
     ]
 
     for label, bot_a, bot_b in matchups:
@@ -872,21 +937,17 @@ if __name__ == "__main__":
         print(f"{label:<38} {score:>6.1%} {wdl:>10} {avg_len:>6.0f}")
 
     print()
-    s = all_results.get("PureStockfish          vs Maia")
+    s = all_results.get("PureStockfish    vs Maia")
     if s:
         s_score = (s["bot_a_wins"] + 0.5 * s["draws"]) / s["total_games"]
-        for label in ("Stonefish+Puzzle+Weak  vs Maia",
-                      "Stonefish+Puzzle       vs Maia"):
-            r = all_results.get(label)
-            if not r:
-                continue
+        r = all_results.get("Stonefish v1     vs Maia")
+        if r:
             r_score = (r["bot_a_wins"] + 0.5 * r["draws"]) / r["total_games"]
-            print(f"  {label:<34} {r_score:>6.1%}  (edge over SF: {r_score - s_score:+.1%})")
-        print(f"  {'PureStockfish          vs Maia':<34} {s_score:>6.1%}  (control)")
+            print(f"  {'Stonefish v1     vs Maia':<32} {r_score:>6.1%}  (edge over SF: {r_score - s_score:+.1%})")
+        print(f"  {'PureStockfish    vs Maia':<32} {s_score:>6.1%}  (control)")
         print()
 
-    for bot in (maia, baseline_t1, post_trap_bot):
-        try: bot.quit()
-        except Exception: pass
+    try: maia.quit()
+    except Exception: pass
     maia_oracle.quit()
     engine.quit()
