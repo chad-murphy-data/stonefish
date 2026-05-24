@@ -265,7 +265,20 @@ class NettlesomeBot:
                  # weaker baseline for the next `post_trap_duration` of
                  # its own moves. Lets us amplify the consequence of a
                  # solved trap so "find 3-of-5" actually converts to wins.
-                 post_trap_baseline=None, post_trap_duration=5):
+                 post_trap_baseline=None, post_trap_duration=5,
+                 # Endgame conversion: when in late game and eval is
+                 # decisive, play deterministically. Above +threshold ->
+                 # convert with SF top; below -threshold -> tank with the
+                 # worst-of-top-N candidate.
+                 endgame_mode=False, endgame_threshold=1.0,
+                 endgame_min_move=30, endgame_min_pieces=14,
+                 # Reverse-Stonefish (probabilistic conversion of opp
+                 # blunders): when our top candidates have a high gap,
+                 # this is a "Stonefish puzzle moment". Flip a coin to
+                 # find SF #1 with conversion_probability; otherwise miss
+                 # to SF #2. ELO-tunable.
+                 conversion_mode=False, conversion_probability=0.80,
+                 conversion_gap_threshold=0.7, conversion_seed=None):
         self.engine = engine
         self.num_candidates = num_candidates
         self.num_responses = num_responses
@@ -291,6 +304,16 @@ class NettlesomeBot:
         self.p_maia_max = p_maia_max
         self.post_trap_baseline = post_trap_baseline
         self.post_trap_duration = post_trap_duration
+        self.endgame_mode = endgame_mode
+        self.endgame_threshold = endgame_threshold
+        self.endgame_min_move = endgame_min_move
+        self.endgame_min_pieces = endgame_min_pieces
+        self.conversion_mode = conversion_mode
+        self.conversion_probability = conversion_probability
+        self.conversion_gap_threshold = conversion_gap_threshold
+        import random as _random
+        self._conv_rng = (_random.Random(conversion_seed)
+                          if conversion_seed is not None else _random)
         self.stats: GameStats = GameStats()
         self._move_counter = 0
         self._pending_moment: Optional[NettlesomeMoment] = None
@@ -304,6 +327,13 @@ class NettlesomeBot:
         self._move_counter = 0
         self._pending_moment = None
         self._post_trap_remaining = 0
+
+    def _in_endgame(self, board: chess.Board) -> bool:
+        """Endgame heuristic: late move count OR few pieces remaining."""
+        if self._move_counter >= self.endgame_min_move:
+            return True
+        piece_count = chess.popcount(board.occupied)
+        return piece_count <= self.endgame_min_pieces
 
     def note_opponent_reply(self, opponent_move: chess.Move):
         """Record that the opponent just played `opponent_move`. If we set a
@@ -354,6 +384,32 @@ class NettlesomeBot:
         if not candidates:
             return random.choice(list(board.legal_moves))
 
+        # Endgame conversion mode: when the position is decisively won
+        # or lost, play deterministically. Translates accumulated trap
+        # eval into game outcome instead of letting it drift away.
+        if self.endgame_mode and self._in_endgame(board):
+            sign = 1.0 if board.turn == chess.WHITE else -1.0
+            top_eval_for_us = candidates[0][1] * sign
+            if top_eval_for_us > self.endgame_threshold:
+                # Decisively winning: play SF #1 to convert.
+                return candidates[0][0]
+            if top_eval_for_us < -self.endgame_threshold:
+                # Decisively losing: tank by picking the worst candidate.
+                return candidates[-1][0]
+
+        # Reverse-Stonefish: probabilistic conversion of "puzzle moments"
+        # for us (positions where our top-2 candidates have a big eval gap,
+        # meaning there's a clear best move a human at the target Elo
+        # would find with conversion_probability).
+        if self.conversion_mode and len(candidates) >= 2:
+            sign = 1.0 if board.turn == chess.WHITE else -1.0
+            e1 = max(-10.0, min(10.0, candidates[0][1] * sign))
+            e2 = max(-10.0, min(10.0, candidates[1][1] * sign))
+            self_gap = e1 - e2
+            if self_gap >= self.conversion_gap_threshold:
+                if self._conv_rng.random() < self.conversion_probability:
+                    return candidates[0][0]   # found the right move
+                return candidates[1][0]       # missed -- play #2
         sf_top_move, sf_top_eval = candidates[0]
         sign = 1.0 if board.turn == chess.WHITE else -1.0
         best_eval_for_us = sf_top_eval * sign
@@ -476,6 +532,8 @@ class NettlesomeBot:
     @property
     def name(self):
         mode_tag = "+Puzzle" if self.puzzle_mode else ("+EV" if self.maia_oracle is not None else "")
+        if self.endgame_mode: mode_tag += "+EG"
+        if self.conversion_mode: mode_tag += f"+Conv{int(self.conversion_probability*100)}"
         tight_tag = "Tight" if self.max_eval_cost <= 0.5 else ""
         base_tag = ""
         if self.baseline_bot is not None:
@@ -990,6 +1048,13 @@ if __name__ == "__main__":
         p_maia_min=0.20, p_maia_max=0.80,
         post_trap_baseline=give_back_baseline,    # +0.5p give-back after find
         post_trap_duration=5,
+        # NEW: endgame conversion (deterministic eval-to-outcome)
+        endgame_mode=True, endgame_threshold=1.0,
+        endgame_min_move=30, endgame_min_pieces=14,
+        # NEW: reverse-Stonefish (probabilistic SF#1 find at the bot's
+        # own puzzle moments) -- 0.80 conversion mimics 1900-tier play.
+        conversion_mode=True, conversion_probability=0.80,
+        conversion_gap_threshold=0.7,
     )
 
     stockfish = PureStockfishBot(engine, depth=depth)
