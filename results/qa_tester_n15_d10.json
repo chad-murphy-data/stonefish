@@ -13,38 +13,470 @@
         {
           "g": 1,
           "moves": 113,
-          "moments": 8,
-          "found": 2,
-          "find_rate": 0.25,
+          "moments": 3,
+          "found": 1,
+          "find_rate": 0.3333333333333333,
           "bot_score": 1.0,
-          "elapsed": 19.050737857818604
+          "elapsed": 15.682666301727295
         },
         {
           "g": 2,
-          "moves": 82,
-          "moments": 1,
-          "found": 0,
-          "find_rate": 0.0,
-          "bot_score": 1.0,
-          "elapsed": 18.57307767868042
+          "moves": 75,
+          "moments": 2,
+          "found": 1,
+          "find_rate": 0.5,
+          "bot_score": 0.0,
+          "elapsed": 12.13096809387207
         },
         {
           "g": 3,
-          "moves": 159,
+          "moves": 101,
+          "moments": 4,
+          "found": 2,
+          "find_rate": 0.5,
+          "bot_score": 1.0,
+          "elapsed": 23.856218099594116
+        },
+        {
+          "g": 4,
+          "moves": 62,
+          "moments": 4,
+          "found": 1,
+          "find_rate": 0.25,
+          "bot_score": 1.0,
+          "elapsed": 14.936683177947998
+        },
+        {
+          "g": 5,
+          "moves": 60,
+          "moments": 1,
+          "found": 1,
+          "find_rate": 1.0,
+          "bot_score": 0.0,
+          "elapsed": 10.153460502624512
+        },
+        {
+          "g": 6,
+          "moves": 129,
+          "moments": 7,
+          "found": 4,
+          "find_rate": 0.5714285714285714,
+          "bot_score": 0.0,
+          "elapsed": 18.473538398742676
+        },
+        {
+          "g": 7,
+          "moves": 75,
+          "moments": 3,
+          "found": 1,
+          "find_rate": 0.3333333333333333,
+          "bot_score": 1.0,
+          "elapsed": 15.341301679611206
+        },
+        {
+          "g": 8,
+          "moves": 139,
+          "moments": 5,
+          "found": 3,
+          "find_rate": 0.6,
+          "bot_score": 0.0,
+          "elapsed": 15.071804523468018
+        },
+        {
+          "g": 9,
+          "moves": 124,
+          "moments": 5,
+          "found": 5,
+          "find_rate": 1.0,
+          "bot_score": 0.0,
+          "elapsed": 13.285290718078613
+        },
+        {
+          "g": 10,
+          "moves": 66,
+          "moments": 4,
+          "found": 1,
+          "find_rate": 0.25,
+          "bot_score": 1.0,
+          "elapsed": 15.60832405090332
+        },
+        {
+          "g": 11,
+          "moves": 200,
+          "moments": 7,
+          "found": 3,
+          "find_rate": 0.42857142857142855,
+          "bot_score": 0.5,
+          "elapsed": 27.3193941116333
+        },
+        {
+          "g": 12,
+          "moves": 80,
+          "moments": 4,
+          "found": 1,
+          "find_rate": 0.25,
+          "bot_score": 1.0,
+          "elapsed": 14.025038003921509
+        },
+        {
+          "g": 13,
+          "moves": 76,
+          "moments": 4,
+          "found": 3,
+          "find_rate": 0.75,
+          "bot_score": 0.0,
+          "elapsed": 10.061565160751343
+        },
+        {
+          "g": 14,
+          "moves": 96,
+          "moments": 3,
+          "found": 1,
+          "find_rate": 0.3333333333333333,
+          "bot_score": 1.0,
+          "elapsed": 19.97700262069702
+        },
+        {
+          "g": 15,
+          "moves": 69,
+          "moments": 3,
+          "found": 1,
+          "find_rate": 0.3333333333333333,
+          "bot_score": 1.0,
+          "elapsed": 15.7372887134552
+        }
+      ],
+      "stone_score": 0.5666666666666667,
+      "opp_score": 0.43333333333333335,
+      "W": 8,
+      "L": 6,
+      "D": 1
+    },
+    "0.5": {
+      "games": [
+        {
+          "g": 1,
+          "moves": 119,
+          "moments": 3,
+          "found": 1,
+          "find_rate": 0.3333333333333333,
+          "bot_score": 1.0,
+          "elapsed": 24.97032117843628
+        },
+        {
+          "g": 2,
+          "moves": 144,
+          "moments": 3,
+          "found": 3,
+          "find_rate": 1.0,
+          "bot_score": 1.0,
+          "elapsed": 22.771697759628296
+        },
+        {
+          "g": 3,
+          "moves": 105,
+          "moments": 1,
+          "found": 1,
+          "find_rate": 1.0,
+          "bot_score": 1.0,
+          "elapsed": 18.615609407424927
+        },
+        {
+          "g": 4,
+          "moves": 127,
+          "moments": 5,
+          "found": 4,
+          "find_rate": 0.8,
+          "bot_score": 0.0,
+          "elapsed": 17.424704790115356
+        },
+        {
+          "g": 5,
+          "moves": 105,
+          "moments": 6,
+          "found": 4,
+          "find_rate": 0.6666666666666666,
+          "bot_score": 1.0,
+          "elapsed": 16.272724390029907
+        },
+        {
+          "g": 6,
+          "moves": 119,
+          "moments": 3,
+          "found": 3,
+          "find_rate": 1.0,
+          "bot_score": 0.0,
+          "elapsed": 21.958001613616943
+        },
+        {
+          "g": 7,
+          "moves": 109,
+          "moments": 5,
+          "found": 4,
+          "find_rate": 0.8,
+          "bot_score": 1.0,
+          "elapsed": 17.986759662628174
+        },
+        {
+          "g": 8,
+          "moves": 95,
+          "moments": 4,
+          "found": 3,
+          "find_rate": 0.75,
+          "bot_score": 0.0,
+          "elapsed": 25.72106432914734
+        },
+        {
+          "g": 9,
+          "moves": 81,
+          "moments": 3,
+          "found": 1,
+          "find_rate": 0.3333333333333333,
+          "bot_score": 1.0,
+          "elapsed": 12.47025203704834
+        },
+        {
+          "g": 10,
+          "moves": 132,
+          "moments": 3,
+          "found": 3,
+          "find_rate": 1.0,
+          "bot_score": 1.0,
+          "elapsed": 17.6694598197937
+        },
+        {
+          "g": 11,
+          "moves": 200,
+          "moments": 8,
+          "found": 6,
+          "find_rate": 0.75,
+          "bot_score": 0.5,
+          "elapsed": 23.632090091705322
+        },
+        {
+          "g": 12,
+          "moves": 62,
+          "moments": 4,
+          "found": 3,
+          "find_rate": 0.75,
+          "bot_score": 1.0,
+          "elapsed": 7.886375188827515
+        },
+        {
+          "g": 13,
+          "moves": 87,
+          "moments": 0,
+          "found": 0,
+          "find_rate": null,
+          "bot_score": 1.0,
+          "elapsed": 19.505280256271362
+        },
+        {
+          "g": 14,
+          "moves": 78,
           "moments": 6,
           "found": 1,
           "find_rate": 0.16666666666666666,
           "bot_score": 1.0,
-          "elapsed": 37.39753985404968
+          "elapsed": 12.143230438232422
         },
         {
-          "g": 4,
-          "moves": 92,
+          "g": 15,
+          "moves": 52,
           "moments": 2,
           "found": 1,
           "find_rate": 0.5,
-          "bot_score": 1.0,
-          "elapsed": 21.090100049972534
+          "bot_score": 0.0,
+          "elapsed": 8.510672092437744
+        }
+      ],
+      "stone_score": 0.7,
+      "opp_score": 0.30000000000000004,
+      "W": 10,
+      "L": 4,
+      "D": 1
+    },
+    "0.7": {
+      "games": [
+        {
+          "g": 1,
+          "moves": 130,
+          "moments": 4,
+          "found": 3,
+          "find_rate": 0.75,
+          "bot_score": 0.0,
+          "elapsed": 16.16269874572754
+        },
+        {
+          "g": 2,
+          "moves": 55,
+          "moments": 3,
+          "found": 2,
+          "find_rate": 0.6666666666666666,
+          "bot_score": 0.0,
+          "elapsed": 9.868041753768921
+        },
+        {
+          "g": 3,
+          "moves": 70,
+          "moments": 1,
+          "found": 1,
+          "find_rate": 1.0,
+          "bot_score": 0.0,
+          "elapsed": 10.118793964385986
+        },
+        {
+          "g": 4,
+          "moves": 71,
+          "moments": 5,
+          "found": 3,
+          "find_rate": 0.6,
+          "bot_score": 0.0,
+          "elapsed": 15.043089151382446
+        },
+        {
+          "g": 5,
+          "moves": 70,
+          "moments": 2,
+          "found": 2,
+          "find_rate": 1.0,
+          "bot_score": 0.0,
+          "elapsed": 9.06001591682434
+        },
+        {
+          "g": 6,
+          "moves": 61,
+          "moments": 3,
+          "found": 3,
+          "find_rate": 1.0,
+          "bot_score": 0.0,
+          "elapsed": 7.947449445724487
+        },
+        {
+          "g": 7,
+          "moves": 64,
+          "moments": 2,
+          "found": 2,
+          "find_rate": 1.0,
+          "bot_score": 0.0,
+          "elapsed": 11.759095668792725
+        },
+        {
+          "g": 8,
+          "moves": 75,
+          "moments": 3,
+          "found": 3,
+          "find_rate": 1.0,
+          "bot_score": 0.0,
+          "elapsed": 8.162740707397461
+        },
+        {
+          "g": 9,
+          "moves": 68,
+          "moments": 4,
+          "found": 3,
+          "find_rate": 0.75,
+          "bot_score": 0.0,
+          "elapsed": 10.257885932922363
+        },
+        {
+          "g": 10,
+          "moves": 69,
+          "moments": 4,
+          "found": 3,
+          "find_rate": 0.75,
+          "bot_score": 0.0,
+          "elapsed": 8.78796672821045
+        },
+        {
+          "g": 11,
+          "moves": 60,
+          "moments": 1,
+          "found": 1,
+          "find_rate": 1.0,
+          "bot_score": 0.0,
+          "elapsed": 10.060230016708374
+        },
+        {
+          "g": 12,
+          "moves": 139,
+          "moments": 5,
+          "found": 2,
+          "find_rate": 0.4,
+          "bot_score": 0.5,
+          "elapsed": 20.467816591262817
+        },
+        {
+          "g": 13,
+          "moves": 74,
+          "moments": 5,
+          "found": 3,
+          "find_rate": 0.6,
+          "bot_score": 0.0,
+          "elapsed": 9.877456665039062
+        },
+        {
+          "g": 14,
+          "moves": 71,
+          "moments": 1,
+          "found": 1,
+          "find_rate": 1.0,
+          "bot_score": 0.0,
+          "elapsed": 13.579158067703247
+        },
+        {
+          "g": 15,
+          "moves": 98,
+          "moments": 3,
+          "found": 2,
+          "find_rate": 0.6666666666666666,
+          "bot_score": 0.0,
+          "elapsed": 12.73401665687561
+        }
+      ],
+      "stone_score": 0.03333333333333333,
+      "opp_score": 0.9666666666666667,
+      "W": 0,
+      "L": 14,
+      "D": 1
+    },
+    "0.9": {
+      "games": [
+        {
+          "g": 1,
+          "moves": 80,
+          "moments": 4,
+          "found": 2,
+          "find_rate": 0.5,
+          "bot_score": 0.0,
+          "elapsed": 13.98209547996521
+        },
+        {
+          "g": 2,
+          "moves": 47,
+          "moments": 2,
+          "found": 2,
+          "find_rate": 1.0,
+          "bot_score": 0.0,
+          "elapsed": 4.990742444992065
+        },
+        {
+          "g": 3,
+          "moves": 86,
+          "moments": 4,
+          "found": 3,
+          "find_rate": 0.75,
+          "bot_score": 0.0,
+          "elapsed": 11.056110382080078
+        },
+        {
+          "g": 4,
+          "moves": 97,
+          "moments": 4,
+          "found": 3,
+          "find_rate": 0.75,
+          "bot_score": 0.0,
+          "elapsed": 11.580613374710083
         },
         {
           "g": 5,
@@ -53,214 +485,70 @@
           "found": 1,
           "find_rate": 1.0,
           "bot_score": 0.0,
-          "elapsed": 11.681638717651367
+          "elapsed": 13.327146053314209
         },
         {
           "g": 6,
-          "moves": 95,
-          "moments": 4,
-          "found": 2,
-          "find_rate": 0.5,
-          "bot_score": 0.0,
-          "elapsed": 25.132003784179688
-        },
-        {
-          "g": 7,
-          "moves": 96,
-          "moments": 5,
-          "found": 3,
-          "find_rate": 0.6,
-          "bot_score": 0.0,
-          "elapsed": 16.471754550933838
-        },
-        {
-          "g": 8,
-          "moves": 83,
+          "moves": 67,
           "moments": 2,
           "found": 2,
           "find_rate": 1.0,
           "bot_score": 0.0,
-          "elapsed": 15.29579210281372
+          "elapsed": 6.702778100967407
         },
         {
-          "g": 9,
-          "moves": 135,
-          "moments": 8,
-          "found": 2,
-          "find_rate": 0.25,
-          "bot_score": 1.0,
-          "elapsed": 23.113786935806274
-        },
-        {
-          "g": 10,
-          "moves": 178,
-          "moments": 11,
-          "found": 2,
-          "find_rate": 0.18181818181818182,
-          "bot_score": 1.0,
-          "elapsed": 29.505792379379272
-        },
-        {
-          "g": 11,
-          "moves": 123,
-          "moments": 7,
-          "found": 2,
-          "find_rate": 0.2857142857142857,
-          "bot_score": 1.0,
-          "elapsed": 21.528659343719482
-        },
-        {
-          "g": 12,
-          "moves": 66,
-          "moments": 6,
-          "found": 0,
-          "find_rate": 0.0,
-          "bot_score": 1.0,
-          "elapsed": 14.250802040100098
-        },
-        {
-          "g": 13,
-          "moves": 100,
-          "moments": 4,
-          "found": 4,
-          "find_rate": 1.0,
-          "bot_score": 0.0,
-          "elapsed": 17.089019536972046
-        },
-        {
-          "g": 14,
-          "moves": 146,
-          "moments": 13,
-          "found": 3,
-          "find_rate": 0.23076923076923078,
-          "bot_score": 1.0,
-          "elapsed": 25.448918104171753
-        },
-        {
-          "g": 15,
-          "moves": 145,
-          "moments": 9,
-          "found": 4,
-          "find_rate": 0.4444444444444444,
-          "bot_score": 1.0,
-          "elapsed": 28.356804609298706
-        }
-      ],
-      "stone_score": 0.6666666666666666,
-      "opp_score": 0.33333333333333337,
-      "W": 10,
-      "L": 5,
-      "D": 0
-    },
-    "0.5": {
-      "games": [
-        {
-          "g": 1,
-          "moves": 200,
-          "moments": 5,
-          "found": 2,
-          "find_rate": 0.4,
-          "bot_score": 0.5,
-          "elapsed": 40.150662899017334
-        },
-        {
-          "g": 2,
-          "moves": 71,
-          "moments": 3,
-          "found": 2,
-          "find_rate": 0.6666666666666666,
-          "bot_score": 0.0,
-          "elapsed": 14.047736167907715
-        },
-        {
-          "g": 3,
-          "moves": 86,
-          "moments": 4,
-          "found": 4,
-          "find_rate": 1.0,
-          "bot_score": 0.0,
-          "elapsed": 11.83115291595459
-        },
-        {
-          "g": 4,
-          "moves": 91,
+          "g": 7,
+          "moves": 106,
           "moments": 4,
           "found": 3,
           "find_rate": 0.75,
           "bot_score": 0.0,
-          "elapsed": 14.165106534957886
-        },
-        {
-          "g": 5,
-          "moves": 200,
-          "moments": 10,
-          "found": 5,
-          "find_rate": 0.5,
-          "bot_score": 0.5,
-          "elapsed": 18.55942678451538
-        },
-        {
-          "g": 6,
-          "moves": 170,
-          "moments": 6,
-          "found": 2,
-          "find_rate": 0.3333333333333333,
-          "bot_score": 1.0,
-          "elapsed": 28.257394552230835
-        },
-        {
-          "g": 7,
-          "moves": 88,
-          "moments": 2,
-          "found": 1,
-          "find_rate": 0.5,
-          "bot_score": 0.0,
-          "elapsed": 14.009023427963257
+          "elapsed": 18.167892694473267
         },
         {
           "g": 8,
-          "moves": 97,
-          "moments": 7,
-          "found": 3,
-          "find_rate": 0.42857142857142855,
+          "moves": 77,
+          "moments": 2,
+          "found": 2,
+          "find_rate": 1.0,
           "bot_score": 0.0,
-          "elapsed": 14.874221324920654
+          "elapsed": 12.5461106300354
         },
         {
           "g": 9,
-          "moves": 70,
+          "moves": 68,
           "moments": 3,
-          "found": 2,
-          "find_rate": 0.6666666666666666,
+          "found": 3,
+          "find_rate": 1.0,
           "bot_score": 0.0,
-          "elapsed": 12.52734375
+          "elapsed": 9.532169342041016
         },
         {
           "g": 10,
-          "moves": 67,
+          "moves": 89,
+          "moments": 5,
+          "found": 3,
+          "find_rate": 0.6,
+          "bot_score": 0.0,
+          "elapsed": 9.524852752685547
+        },
+        {
+          "g": 11,
+          "moves": 98,
+          "moments": 3,
+          "found": 3,
+          "find_rate": 1.0,
+          "bot_score": 0.0,
+          "elapsed": 12.360305070877075
+        },
+        {
+          "g": 12,
+          "moves": 83,
           "moments": 3,
           "found": 2,
           "find_rate": 0.6666666666666666,
           "bot_score": 0.0,
-          "elapsed": 10.588351249694824
-        },
-        {
-          "g": 11,
-          "moves": 84,
-          "moments": 6,
-          "found": 3,
-          "find_rate": 0.5,
-          "bot_score": 0.0,
-          "elapsed": 14.004472970962524
-        },
-        {
-          "g": 12,
-          "moves": 69,
-          "moments": 1,
-          "found": 1,
-          "find_rate": 1.0,
-          "bot_score": 0.0,
-          "elapsed": 13.258717060089111
+          "elapsed": 9.895770072937012
         },
         {
           "g": 13,
@@ -269,313 +557,25 @@
           "found": 2,
           "find_rate": 1.0,
           "bot_score": 0.0,
-          "elapsed": 15.259912490844727
+          "elapsed": 12.524255752563477
         },
         {
           "g": 14,
-          "moves": 53,
-          "moments": 3,
-          "found": 1,
-          "find_rate": 0.3333333333333333,
-          "bot_score": 0.0,
-          "elapsed": 12.102498531341553
-        },
-        {
-          "g": 15,
-          "moves": 85,
-          "moments": 4,
-          "found": 1,
-          "find_rate": 0.25,
-          "bot_score": 1.0,
-          "elapsed": 16.983194589614868
-        }
-      ],
-      "stone_score": 0.2,
-      "opp_score": 0.8,
-      "W": 2,
-      "L": 11,
-      "D": 2
-    },
-    "0.7": {
-      "games": [
-        {
-          "g": 1,
-          "moves": 105,
-          "moments": 5,
-          "found": 3,
-          "find_rate": 0.6,
-          "bot_score": 1.0,
-          "elapsed": 17.79677653312683
-        },
-        {
-          "g": 2,
-          "moves": 69,
-          "moments": 3,
-          "found": 3,
-          "find_rate": 1.0,
-          "bot_score": 0.0,
-          "elapsed": 9.753829002380371
-        },
-        {
-          "g": 3,
-          "moves": 64,
+          "moves": 79,
           "moments": 2,
           "found": 2,
           "find_rate": 1.0,
           "bot_score": 0.0,
-          "elapsed": 9.339664697647095
+          "elapsed": 10.58315134048462
         },
         {
-          "g": 4,
-          "moves": 101,
+          "g": 15,
+          "moves": 102,
           "moments": 3,
           "found": 2,
           "find_rate": 0.6666666666666666,
           "bot_score": 0.0,
-          "elapsed": 17.776087522506714
-        },
-        {
-          "g": 5,
-          "moves": 76,
-          "moments": 1,
-          "found": 1,
-          "find_rate": 1.0,
-          "bot_score": 0.0,
-          "elapsed": 13.213704824447632
-        },
-        {
-          "g": 6,
-          "moves": 79,
-          "moments": 4,
-          "found": 3,
-          "find_rate": 0.75,
-          "bot_score": 0.0,
-          "elapsed": 7.480232000350952
-        },
-        {
-          "g": 7,
-          "moves": 78,
-          "moments": 4,
-          "found": 3,
-          "find_rate": 0.75,
-          "bot_score": 0.0,
-          "elapsed": 11.815836191177368
-        },
-        {
-          "g": 8,
-          "moves": 59,
-          "moments": 2,
-          "found": 2,
-          "find_rate": 1.0,
-          "bot_score": 0.0,
-          "elapsed": 8.653076410293579
-        },
-        {
-          "g": 9,
-          "moves": 66,
-          "moments": 2,
-          "found": 2,
-          "find_rate": 1.0,
-          "bot_score": 0.0,
-          "elapsed": 9.376757383346558
-        },
-        {
-          "g": 10,
-          "moves": 126,
-          "moments": 7,
-          "found": 3,
-          "find_rate": 0.42857142857142855,
-          "bot_score": 1.0,
-          "elapsed": 18.979001760482788
-        },
-        {
-          "g": 11,
-          "moves": 70,
-          "moments": 1,
-          "found": 0,
-          "find_rate": 0.0,
-          "bot_score": 0.0,
-          "elapsed": 17.091089487075806
-        },
-        {
-          "g": 12,
-          "moves": 95,
-          "moments": 5,
-          "found": 3,
-          "find_rate": 0.6,
-          "bot_score": 0.0,
-          "elapsed": 15.153504371643066
-        },
-        {
-          "g": 13,
-          "moves": 82,
-          "moments": 5,
-          "found": 3,
-          "find_rate": 0.6,
-          "bot_score": 0.0,
-          "elapsed": 12.589878559112549
-        },
-        {
-          "g": 14,
-          "moves": 119,
-          "moments": 2,
-          "found": 2,
-          "find_rate": 1.0,
-          "bot_score": 0.0,
-          "elapsed": 19.63055944442749
-        },
-        {
-          "g": 15,
-          "moves": 76,
-          "moments": 4,
-          "found": 2,
-          "find_rate": 0.5,
-          "bot_score": 0.0,
-          "elapsed": 12.030046939849854
-        }
-      ],
-      "stone_score": 0.13333333333333333,
-      "opp_score": 0.8666666666666667,
-      "W": 2,
-      "L": 13,
-      "D": 0
-    },
-    "0.9": {
-      "games": [
-        {
-          "g": 1,
-          "moves": 88,
-          "moments": 2,
-          "found": 1,
-          "find_rate": 0.5,
-          "bot_score": 0.0,
-          "elapsed": 16.74199366569519
-        },
-        {
-          "g": 2,
-          "moves": 79,
-          "moments": 1,
-          "found": 1,
-          "find_rate": 1.0,
-          "bot_score": 0.0,
-          "elapsed": 16.838438510894775
-        },
-        {
-          "g": 3,
-          "moves": 78,
-          "moments": 3,
-          "found": 3,
-          "find_rate": 1.0,
-          "bot_score": 0.0,
-          "elapsed": 9.690998554229736
-        },
-        {
-          "g": 4,
-          "moves": 51,
-          "moments": 2,
-          "found": 2,
-          "find_rate": 1.0,
-          "bot_score": 0.0,
-          "elapsed": 4.709220886230469
-        },
-        {
-          "g": 5,
-          "moves": 68,
-          "moments": 2,
-          "found": 2,
-          "find_rate": 1.0,
-          "bot_score": 0.0,
-          "elapsed": 10.2534761428833
-        },
-        {
-          "g": 6,
-          "moves": 57,
-          "moments": 3,
-          "found": 3,
-          "find_rate": 1.0,
-          "bot_score": 0.0,
-          "elapsed": 4.546045541763306
-        },
-        {
-          "g": 7,
-          "moves": 90,
-          "moments": 4,
-          "found": 3,
-          "find_rate": 0.75,
-          "bot_score": 0.0,
-          "elapsed": 13.588516473770142
-        },
-        {
-          "g": 8,
-          "moves": 99,
-          "moments": 5,
-          "found": 4,
-          "find_rate": 0.8,
-          "bot_score": 0.0,
-          "elapsed": 11.429488182067871
-        },
-        {
-          "g": 9,
-          "moves": 58,
-          "moments": 1,
-          "found": 1,
-          "find_rate": 1.0,
-          "bot_score": 0.0,
-          "elapsed": 10.3939368724823
-        },
-        {
-          "g": 10,
-          "moves": 69,
-          "moments": 4,
-          "found": 2,
-          "find_rate": 0.5,
-          "bot_score": 0.0,
-          "elapsed": 15.335249423980713
-        },
-        {
-          "g": 11,
-          "moves": 120,
-          "moments": 3,
-          "found": 3,
-          "find_rate": 1.0,
-          "bot_score": 0.0,
-          "elapsed": 17.75407385826111
-        },
-        {
-          "g": 12,
-          "moves": 57,
-          "moments": 3,
-          "found": 3,
-          "find_rate": 1.0,
-          "bot_score": 0.0,
-          "elapsed": 6.664127588272095
-        },
-        {
-          "g": 13,
-          "moves": 88,
-          "moments": 3,
-          "found": 2,
-          "find_rate": 0.6666666666666666,
-          "bot_score": 0.0,
-          "elapsed": 14.540844678878784
-        },
-        {
-          "g": 14,
-          "moves": 65,
-          "moments": 2,
-          "found": 2,
-          "find_rate": 1.0,
-          "bot_score": 0.0,
-          "elapsed": 9.721246004104614
-        },
-        {
-          "g": 15,
-          "moves": 68,
-          "moments": 2,
-          "found": 2,
-          "find_rate": 1.0,
-          "bot_score": 0.0,
-          "elapsed": 11.396477222442627
+          "elapsed": 15.69056487083435
         }
       ],
       "stone_score": 0.0,
