@@ -665,6 +665,63 @@ class EquilibriumBaselineBot:
         return f"Equilibrium(target=-{self.target_delta:.2f}p,rating~{self.rating})"
 
 
+class CoinFlipTesterBot:
+    """A synthetic opponent for isolating the trap mechanic from opponent variance.
+
+    Plays Stockfish at the given depth for ordinary positions. When the
+    position is a "trap moment" -- detected by a large eval gap between
+    its top-2 candidate replies -- it flips a weighted coin:
+
+        * with probability `find_probability`, play SF's #1 ("find the trap")
+        * otherwise, play SF's #2 or #3 ("miss the trap")
+
+    This lets us programmatically control the find rate and verify the
+    QA rules without Maia's stochastic baseline blowing up games for
+    reasons unrelated to trap-finding.
+    """
+
+    def __init__(self, sf_engine, depth=10, find_probability=0.6,
+                 trap_gap_threshold=0.5, seed=None):
+        self.sf = sf_engine
+        self.depth = depth
+        self.find_probability = find_probability
+        self.trap_gap_threshold = trap_gap_threshold
+        import random as _random
+        self._rng = _random.Random(seed) if seed is not None else _random
+
+    def choose_move(self, board):
+        candidates = get_top_moves(self.sf, board, num_moves=5, depth=self.depth)
+        if not candidates:
+            return random.choice(list(board.legal_moves))
+        if len(candidates) < 2:
+            return candidates[0][0]
+
+        sign = 1.0 if board.turn == chess.WHITE else -1.0
+        e1 = candidates[0][1] * sign  # current side's best eval
+        e2 = candidates[1][1] * sign  # second-best
+        # Cap mate-like spikes so they don't poison the threshold
+        gap = max(-10.0, min(10.0, e1)) - max(-10.0, min(10.0, e2))
+
+        if gap < self.trap_gap_threshold:
+            # No trap detected: play SF #1
+            return candidates[0][0]
+
+        # Trap detected: flip the weighted coin
+        if self._rng.random() < self.find_probability:
+            return candidates[0][0]
+        # Miss: pick #2 (or #3 sometimes if available)
+        if len(candidates) >= 3 and self._rng.random() < 0.5:
+            return candidates[2][0]
+        return candidates[1][0]
+
+    def quit(self):
+        pass
+
+    @property
+    def name(self):
+        return f"CoinFlipTester(p={self.find_probability:.2f})"
+
+
 def play_game(white_bot, black_bot, max_moves=200, verbose=False, live=False,
               game_label=""):
     """Play a single game between two bots. Returns result from white's perspective.
