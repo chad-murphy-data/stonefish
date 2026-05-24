@@ -68,8 +68,9 @@ def run_qa(num_games: int, depth: int):
     # Baseline = Equilibrium SF at target_delta=0.3 (stable ~1900 strength)
     baseline = EquilibriumBaselineBot(sf, oracle, target_delta=0.3,
                                        depth=depth, rating=1900)
-    # Give-back = +0.1p extra per move (target_delta=0.4) for 5 plies after find
-    give_back = EquilibriumBaselineBot(sf, oracle, target_delta=0.4,
+    # Give-back = +0.4p extra per move (target_delta=0.7) for 5 plies after find
+    # ~+2p over 5 moves -- decisive at 1900 level
+    give_back = EquilibriumBaselineBot(sf, oracle, target_delta=0.7,
                                         depth=depth, rating=1900)
     stonefish = make_stonefish(sf, oracle, baseline, give_back, depth)
     maia_opponent = MaiaBot(maia_weights, temperature=1.0, seed=99)

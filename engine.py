@@ -889,10 +889,12 @@ if __name__ == "__main__":
         engine, maia_oracle, target_delta=0.3, depth=depth, rating=1900,
     )
 
-    # Post-find give-back: 0.4p target = 0.1p more per move than baseline.
-    # Over 5 moves: +0.5p of extra advantage handed to opp for solving a trap.
+    # Post-find give-back: 0.7p target = 0.4p more per move than baseline.
+    # Over 5 moves: ~+2.0p of extra advantage handed to opp for solving a trap
+    # -- big enough that finding a trap is a decisive shift at 1900-level
+    # play, where +1p often draws and +2p is winning.
     give_back_baseline = EquilibriumBaselineBot(
-        engine, maia_oracle, target_delta=0.4, depth=depth, rating=1900,
+        engine, maia_oracle, target_delta=0.7, depth=depth, rating=1900,
     )
 
     # Symmetric puzzle filter: gap is bounded BOTH above and below relative
