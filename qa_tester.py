@@ -42,10 +42,8 @@ def make_stonefish(sf_engine, maia_oracle, baseline, give_back, depth):
         p_maia_min=0.20, p_maia_max=0.80,
         post_trap_baseline=give_back,
         post_trap_duration=5,
-        endgame_mode=True, endgame_threshold=1.0,
+        endgame_mode=True,
         endgame_min_move=30, endgame_min_pieces=14,
-        conversion_mode=True, conversion_probability=0.80,
-        conversion_gap_threshold=0.7,
     )
 
 

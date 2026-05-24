@@ -384,32 +384,39 @@ class NettlesomeBot:
         if not candidates:
             return random.choice(list(board.legal_moves))
 
-        # Endgame conversion mode: when the position is decisively won
-        # or lost, play deterministically. Translates accumulated trap
-        # eval into game outcome instead of letting it drift away.
+        # Endgame mode: reward / punish based on opponent's puzzle-solving
+        # performance so far.
+        #   - Opp solve rate >= 50%  -> play imprecisely (continue throttled
+        #     baseline, let any opp advantage convert)
+        #   - Opp solve rate <  50%  -> play super precisely (SF #1) to
+        #     convert any bot advantage into a win
+        # This directly translates trap performance into outcome, instead
+        # of relying on eval drift to do it.
         if self.endgame_mode and self._in_endgame(board):
-            sign = 1.0 if board.turn == chess.WHITE else -1.0
-            top_eval_for_us = candidates[0][1] * sign
-            if top_eval_for_us > self.endgame_threshold:
-                # Decisively winning: play SF #1 to convert.
-                return candidates[0][0]
-            if top_eval_for_us < -self.endgame_threshold:
-                # Decisively losing: tank by picking the worst candidate.
-                return candidates[-1][0]
+            stats = self.stats
+            if stats.n_moments > 0:
+                solve_rate = stats.n_opp_found_top / stats.n_moments
+                if solve_rate < 0.50:
+                    # Opp didn't earn the win: convert decisively with SF #1
+                    return candidates[0][0]
+                # else: fall through to baseline (imprecise play)
 
-        # Reverse-Stonefish: probabilistic conversion of "puzzle moments"
-        # for us (positions where our top-2 candidates have a big eval gap,
-        # meaning there's a clear best move a human at the target Elo
-        # would find with conversion_probability).
-        if self.conversion_mode and len(candidates) >= 2:
-            sign = 1.0 if board.turn == chess.WHITE else -1.0
-            e1 = max(-10.0, min(10.0, candidates[0][1] * sign))
-            e2 = max(-10.0, min(10.0, candidates[1][1] * sign))
-            self_gap = e1 - e2
-            if self_gap >= self.conversion_gap_threshold:
-                if self._conv_rng.random() < self.conversion_probability:
-                    return candidates[0][0]   # found the right move
-                return candidates[1][0]       # missed -- play #2
+        # Reverse-Stonefish (commented out by default; reserved for an
+        # ELO-aware weakened mode where the bot probabilistically misses
+        # clear-best moves at the target rating).
+        # Default behaviour: when conversion_mode is False, the bot just
+        # plays its baseline / trap logic without artificial missing -- it
+        # IS Stockfish-backed, so SF #1 is the natural default in clear
+        # positions when no trap or give-back is active.
+        # if self.conversion_mode and len(candidates) >= 2:
+        #     sign = 1.0 if board.turn == chess.WHITE else -1.0
+        #     e1 = max(-10.0, min(10.0, candidates[0][1] * sign))
+        #     e2 = max(-10.0, min(10.0, candidates[1][1] * sign))
+        #     self_gap = e1 - e2
+        #     if self_gap >= self.conversion_gap_threshold:
+        #         if self._conv_rng.random() < self.conversion_probability:
+        #             return candidates[0][0]   # found the right move
+        #         return candidates[1][0]       # missed -- play #2
         sf_top_move, sf_top_eval = candidates[0]
         sign = 1.0 if board.turn == chess.WHITE else -1.0
         best_eval_for_us = sf_top_eval * sign
@@ -1048,13 +1055,12 @@ if __name__ == "__main__":
         p_maia_min=0.20, p_maia_max=0.80,
         post_trap_baseline=give_back_baseline,    # +0.5p give-back after find
         post_trap_duration=5,
-        # NEW: endgame conversion (deterministic eval-to-outcome)
-        endgame_mode=True, endgame_threshold=1.0,
+        # NEW: endgame mode -- precise if opp solved <50% of puzzles,
+        # imprecise otherwise (reward/punish based on puzzle performance)
+        endgame_mode=True,
         endgame_min_move=30, endgame_min_pieces=14,
-        # NEW: reverse-Stonefish (probabilistic SF#1 find at the bot's
-        # own puzzle moments) -- 0.80 conversion mimics 1900-tier play.
-        conversion_mode=True, conversion_probability=0.80,
-        conversion_gap_threshold=0.7,
+        # conversion_mode (reverse-Stonefish) commented out for now;
+        # reserved for an ELO-weakened mode in a future iteration.
     )
 
     stockfish = PureStockfishBot(engine, depth=depth)
