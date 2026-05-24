@@ -759,8 +759,25 @@ class CoinFlipTesterBot:
         # trap outcomes.
         self.baseline_target_delta = baseline_target_delta
         self.num_candidates = num_candidates
-        import random as _random
-        self._rng = _random.Random(seed) if seed is not None else _random
+        # Seed for the deterministic per-position coin (hashed against
+        # board FEN). Same position + seed -> same coin outcome regardless
+        # of which bot is being tested.
+        self.seed = seed if seed is not None else 0
+
+    def _position_coin(self, board) -> float:
+        """Deterministic [0, 1) value keyed on (board, seed). Lets us swap
+        bots without changing the coin sequence at the same positions."""
+        import hashlib
+        key = f"{board.fen()}|{self.seed}|{self.find_probability:.3f}".encode()
+        h = hashlib.sha256(key).digest()
+        return int.from_bytes(h[:8], "big") / (1 << 64)
+
+    def _position_choice(self, board) -> float:
+        """Second deterministic value for picking between #2 and #3 misses."""
+        import hashlib
+        key = f"{board.fen()}|{self.seed}|miss".encode()
+        h = hashlib.sha256(key).digest()
+        return int.from_bytes(h[:8], "big") / (1 << 64)
 
     def choose_move(self, board):
         candidates = get_top_moves(self.sf, board, num_moves=self.num_candidates,
@@ -777,11 +794,11 @@ class CoinFlipTesterBot:
         gap = max(-10.0, min(10.0, e1)) - max(-10.0, min(10.0, e2))
 
         if gap >= self.trap_gap_threshold:
-            # Trap detected: flip the weighted coin
-            if self._rng.random() < self.find_probability:
+            # Trap detected: deterministic per-position coin
+            if self._position_coin(board) < self.find_probability:
                 return candidates[0][0]
             # Miss: pick #2 (or #3 sometimes if available)
-            if len(candidates) >= 3 and self._rng.random() < 0.5:
+            if len(candidates) >= 3 and self._position_choice(board) < 0.5:
                 return candidates[2][0]
             return candidates[1][0]
 
