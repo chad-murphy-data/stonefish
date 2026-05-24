@@ -881,17 +881,18 @@ if __name__ == "__main__":
     from maia_policy import MaiaPolicyEngine
     maia_oracle = MaiaPolicyEngine(maia_weights, rating=maia_rating)
 
-    # Baseline (between traps) = Equilibrium SF + Maia flavor. Targets a
-    # -0.1p drift per move so opp at 1900 (which makes similar mistakes)
-    # naturally drifts toward eval stability between trap moments.
-    equilibrium_baseline = EquilibriumBaselineBot(
-        engine, maia_oracle, target_delta=0.1, depth=depth, rating=1900,
-    )
+    # Baseline (between traps) = stochastic Maia 1900 (T=1). The
+    # Equilibrium variant we tried first was unintentionally stronger
+    # than 1900 (it picks among SF's top candidates), letting Stonefish
+    # win on baseline alone. Stochastic Maia 1900 matches the opponent's
+    # actual strength, so outcomes hinge on traps.
+    baseline_maia = MaiaBot(maia_weights, rating=maia_rating,
+                            temperature=1.0, seed=3)
 
-    # Post-find give-back: after the opponent solves a trap, Stonefish drifts
-    # eval toward losing at +0.1p/move extra for the next 5 moves -- a
-    # cumulative +0.5p give-back per found trap. Makes "find = clear win for
-    # opp" hold even when traps are naturally asymmetric (gap >> cost).
+    # Post-find give-back is the engineered eval transfer. Equilibrium SF
+    # targeting -0.2p means Stonefish concedes 0.1p more per move than its
+    # 1900 baseline normally would; over 5 moves that's ~0.5p of extra
+    # advantage handed to the opponent for solving a trap.
     give_back_baseline = EquilibriumBaselineBot(
         engine, maia_oracle, target_delta=0.2, depth=depth, rating=1900,
     )
@@ -902,7 +903,7 @@ if __name__ == "__main__":
     stonefish_v1 = NettlesomeBot(
         engine, num_candidates=7, num_responses=3,
         depth=depth, max_eval_cost=1.5,
-        maia_oracle=maia_oracle, baseline_bot=equilibrium_baseline,
+        maia_oracle=maia_oracle, baseline_bot=baseline_maia,
         puzzle_mode=True,
         min_eval_cost=0.20,
         min_gap=0.50,
