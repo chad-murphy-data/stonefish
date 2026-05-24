@@ -50,8 +50,11 @@ def run_for_probability(find_prob, num_games, depth, sf, oracle):
     give_back = EquilibriumBaselineBot(sf, oracle, target_delta=0.7, depth=depth, rating=1900)
     stonefish = make_stonefish(sf, oracle, baseline, give_back, depth)
     # Seed the tester deterministically (varies across prob-buckets via the prob)
+    # baseline_target_delta=0 -> tester plays SF top in non-trap positions
+    # (matches the original behavior the p=0.30 data came from).
     tester = CoinFlipTesterBot(sf, depth=depth, find_probability=find_prob,
                                 trap_gap_threshold=0.5,
+                                baseline_target_delta=0.0,
                                 seed=int(find_prob * 1000))
 
     games = []
