@@ -65,10 +65,11 @@ def run_qa(num_games: int, depth: int):
     sf = chess.engine.SimpleEngine.popen_uci(STOCKFISH_PATH)
     sf.configure({"Threads": 2, "Hash": 256})
     oracle = MaiaPolicyEngine(maia_weights)
-    # Baseline = stochastic Maia 1900 (actual 1900-level + variance)
-    baseline = MaiaBot(maia_weights, temperature=1.0, seed=3)
-    # Give-back = engineered eval transfer via Equilibrium drift after finds
-    give_back = EquilibriumBaselineBot(sf, oracle, target_delta=0.2,
+    # Baseline = Equilibrium SF at target_delta=0.3 (stable ~1900 strength)
+    baseline = EquilibriumBaselineBot(sf, oracle, target_delta=0.3,
+                                       depth=depth, rating=1900)
+    # Give-back = +0.1p extra per move (target_delta=0.4) for 5 plies after find
+    give_back = EquilibriumBaselineBot(sf, oracle, target_delta=0.4,
                                         depth=depth, rating=1900)
     stonefish = make_stonefish(sf, oracle, baseline, give_back, depth)
     maia_opponent = MaiaBot(maia_weights, temperature=1.0, seed=99)

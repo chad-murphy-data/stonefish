@@ -44,8 +44,8 @@ def main(our_color_str: str, depth: int):
     sf.configure({"Threads": 2, "Hash": 256})
     oracle = MaiaPolicyEngine(weights)
 
-    baseline = MaiaBot(weights, temperature=1.0, seed=3)
-    give_back = EquilibriumBaselineBot(sf, oracle, target_delta=0.2, depth=depth, rating=1900)
+    baseline = EquilibriumBaselineBot(sf, oracle, target_delta=0.3, depth=depth, rating=1900)
+    give_back = EquilibriumBaselineBot(sf, oracle, target_delta=0.4, depth=depth, rating=1900)
 
     stonefish = NettlesomeBot(
         sf, num_candidates=7, num_responses=3,

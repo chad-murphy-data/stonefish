@@ -881,20 +881,18 @@ if __name__ == "__main__":
     from maia_policy import MaiaPolicyEngine
     maia_oracle = MaiaPolicyEngine(maia_weights, rating=maia_rating)
 
-    # Baseline (between traps) = stochastic Maia 1900 (T=1). The
-    # Equilibrium variant we tried first was unintentionally stronger
-    # than 1900 (it picks among SF's top candidates), letting Stonefish
-    # win on baseline alone. Stochastic Maia 1900 matches the opponent's
-    # actual strength, so outcomes hinge on traps.
-    baseline_maia = MaiaBot(maia_weights, rating=maia_rating,
-                            temperature=1.0, seed=3)
+    # Baseline (between traps) = Equilibrium SF at target_delta=0.3.
+    # Stonefish gives back ~0.3p of eval per move, matching opp's
+    # expected ~1900 inaccuracy. Stable, low-variance baseline that
+    # avoids Maia's catastrophic single-move blunders.
+    baseline_eq = EquilibriumBaselineBot(
+        engine, maia_oracle, target_delta=0.3, depth=depth, rating=1900,
+    )
 
-    # Post-find give-back is the engineered eval transfer. Equilibrium SF
-    # targeting -0.2p means Stonefish concedes 0.1p more per move than its
-    # 1900 baseline normally would; over 5 moves that's ~0.5p of extra
-    # advantage handed to the opponent for solving a trap.
+    # Post-find give-back: 0.4p target = 0.1p more per move than baseline.
+    # Over 5 moves: +0.5p of extra advantage handed to opp for solving a trap.
     give_back_baseline = EquilibriumBaselineBot(
-        engine, maia_oracle, target_delta=0.2, depth=depth, rating=1900,
+        engine, maia_oracle, target_delta=0.4, depth=depth, rating=1900,
     )
 
     # Symmetric puzzle filter: gap is bounded BOTH above and below relative
@@ -903,7 +901,7 @@ if __name__ == "__main__":
     stonefish_v1 = NettlesomeBot(
         engine, num_candidates=7, num_responses=3,
         depth=depth, max_eval_cost=1.5,
-        maia_oracle=maia_oracle, baseline_bot=baseline_maia,
+        maia_oracle=maia_oracle, baseline_bot=baseline_eq,
         puzzle_mode=True,
         min_eval_cost=0.20,
         min_gap=0.50,
