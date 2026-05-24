@@ -38,10 +38,10 @@ def make_stonefish(sf_engine, maia_oracle, baseline, depth):
         depth=depth, max_eval_cost=1.5,
         maia_oracle=maia_oracle, baseline_bot=baseline,
         puzzle_mode=True,
-        min_eval_cost=0.25,
+        min_eval_cost=0.20,
         min_gap=0.50,
-        min_gap_ratio=1.8,
-        max_gap_ratio=2.2,
+        min_gap_ratio=1.5,
+        max_gap_ratio=4.0,
         p_maia_min=0.20, p_maia_max=0.80,
     )
 

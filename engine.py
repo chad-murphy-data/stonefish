@@ -896,10 +896,10 @@ if __name__ == "__main__":
         depth=depth, max_eval_cost=1.5,
         maia_oracle=maia_oracle, baseline_bot=equilibrium_baseline,
         puzzle_mode=True,
-        min_eval_cost=0.25,
+        min_eval_cost=0.20,
         min_gap=0.50,
-        min_gap_ratio=1.8,                        # gap >= 1.8 * cost
-        max_gap_ratio=2.2,                        # gap <= 2.2 * cost
+        min_gap_ratio=1.5,                        # gap >= 1.5 * cost
+        max_gap_ratio=4.0,                        # gap <= 4 * cost (accept some asymmetry)
         p_maia_min=0.20, p_maia_max=0.80,
         # No post-trap weakness in v1 -- equilibrium baseline preserves
         # the trap eval drift naturally.
