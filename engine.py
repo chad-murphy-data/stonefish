@@ -681,16 +681,25 @@ class CoinFlipTesterBot:
     """
 
     def __init__(self, sf_engine, depth=10, find_probability=0.6,
-                 trap_gap_threshold=0.5, seed=None):
+                 trap_gap_threshold=0.5, baseline_target_delta=0.3,
+                 num_candidates=8, seed=None):
         self.sf = sf_engine
         self.depth = depth
         self.find_probability = find_probability
         self.trap_gap_threshold = trap_gap_threshold
+        # Tester also throttles its non-trap play to baseline_target_delta
+        # below optimal, so it plays at the same nominal "1900" level as
+        # Stonefish's baseline. Without this, tester is SF-strength and
+        # wins baseline-vs-Stonefish deterministically, regardless of
+        # trap outcomes.
+        self.baseline_target_delta = baseline_target_delta
+        self.num_candidates = num_candidates
         import random as _random
         self._rng = _random.Random(seed) if seed is not None else _random
 
     def choose_move(self, board):
-        candidates = get_top_moves(self.sf, board, num_moves=5, depth=self.depth)
+        candidates = get_top_moves(self.sf, board, num_moves=self.num_candidates,
+                                    depth=self.depth)
         if not candidates:
             return random.choice(list(board.legal_moves))
         if len(candidates) < 2:
@@ -702,17 +711,28 @@ class CoinFlipTesterBot:
         # Cap mate-like spikes so they don't poison the threshold
         gap = max(-10.0, min(10.0, e1)) - max(-10.0, min(10.0, e2))
 
-        if gap < self.trap_gap_threshold:
-            # No trap detected: play SF #1
-            return candidates[0][0]
+        if gap >= self.trap_gap_threshold:
+            # Trap detected: flip the weighted coin
+            if self._rng.random() < self.find_probability:
+                return candidates[0][0]
+            # Miss: pick #2 (or #3 sometimes if available)
+            if len(candidates) >= 3 and self._rng.random() < 0.5:
+                return candidates[2][0]
+            return candidates[1][0]
 
-        # Trap detected: flip the weighted coin
-        if self._rng.random() < self.find_probability:
-            return candidates[0][0]
-        # Miss: pick #2 (or #3 sometimes if available)
-        if len(candidates) >= 3 and self._rng.random() < 0.5:
-            return candidates[2][0]
-        return candidates[1][0]
+        # Non-trap baseline: pick the candidate closest to baseline_target_delta
+        # below SF top. Symmetrises play strength with Stonefish's baseline.
+        sf_top_eval = e1
+        best_move = candidates[0][0]
+        best_diff = abs(0.0 - self.baseline_target_delta)  # diff for SF top (delta=0)
+        for move, eval_cp in candidates:
+            eval_for_us = max(-10.0, min(10.0, eval_cp * sign))
+            delta = sf_top_eval - eval_for_us
+            diff = abs(delta - self.baseline_target_delta)
+            if diff < best_diff:
+                best_diff = diff
+                best_move = move
+        return best_move
 
     def quit(self):
         pass
