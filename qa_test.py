@@ -31,7 +31,7 @@ from engine import (
 from maia_policy import MaiaPolicyEngine
 
 
-def make_stonefish(sf_engine, maia_oracle, baseline, depth):
+def make_stonefish(sf_engine, maia_oracle, baseline, give_back, depth):
     """Build the canonical Stonefish v1 the QA targets."""
     return NettlesomeBot(
         sf_engine, num_candidates=7, num_responses=3,
@@ -41,8 +41,9 @@ def make_stonefish(sf_engine, maia_oracle, baseline, depth):
         min_eval_cost=0.20,
         min_gap=0.50,
         min_gap_ratio=1.5,
-        max_gap_ratio=4.0,
         p_maia_min=0.20, p_maia_max=0.80,
+        post_trap_baseline=give_back,
+        post_trap_duration=5,
     )
 
 
@@ -66,7 +67,9 @@ def run_qa(num_games: int, depth: int):
     oracle = MaiaPolicyEngine(maia_weights)
     baseline = EquilibriumBaselineBot(sf, oracle, target_delta=0.1,
                                        depth=depth, rating=1900)
-    stonefish = make_stonefish(sf, oracle, baseline, depth)
+    give_back = EquilibriumBaselineBot(sf, oracle, target_delta=0.2,
+                                        depth=depth, rating=1900)
+    stonefish = make_stonefish(sf, oracle, baseline, give_back, depth)
     maia_opponent = MaiaBot(maia_weights, temperature=1.0, seed=99)
 
     per_game = []  # one row per game

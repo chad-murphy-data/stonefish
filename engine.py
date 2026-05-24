@@ -888,6 +888,14 @@ if __name__ == "__main__":
         engine, maia_oracle, target_delta=0.1, depth=depth, rating=1900,
     )
 
+    # Post-find give-back: after the opponent solves a trap, Stonefish drifts
+    # eval toward losing at +0.1p/move extra for the next 5 moves -- a
+    # cumulative +0.5p give-back per found trap. Makes "find = clear win for
+    # opp" hold even when traps are naturally asymmetric (gap >> cost).
+    give_back_baseline = EquilibriumBaselineBot(
+        engine, maia_oracle, target_delta=0.2, depth=depth, rating=1900,
+    )
+
     # Symmetric puzzle filter: gap is bounded BOTH above and below relative
     # to cost, so each trap is near-symmetric (find ~ +X, miss ~ -X).
     # That's what makes find-3-of-5 = clean win, find-2-of-5 = clean lose.
@@ -899,10 +907,11 @@ if __name__ == "__main__":
         min_eval_cost=0.20,
         min_gap=0.50,
         min_gap_ratio=1.5,                        # gap >= 1.5 * cost
-        max_gap_ratio=4.0,                        # gap <= 4 * cost (accept some asymmetry)
+        # No max_gap_ratio -- chess.com-style !-moments are naturally
+        # asymmetric (gap >> cost), and the give-back covers the calibration.
         p_maia_min=0.20, p_maia_max=0.80,
-        # No post-trap weakness in v1 -- equilibrium baseline preserves
-        # the trap eval drift naturally.
+        post_trap_baseline=give_back_baseline,    # +0.5p give-back after find
+        post_trap_duration=5,
     )
 
     stockfish = PureStockfishBot(engine, depth=depth)
