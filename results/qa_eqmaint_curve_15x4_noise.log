@@ -1,0 +1,171 @@
+Analyzing: results/qa_tester_n15_d10.json
+  games/bucket = 15   depth = 10   probs = [0.3, 0.5, 0.7, 0.9]
+
+========================================================================
+BUCKET: find_prob = 0.3   (n=15 games)
+========================================================================
+Outcome:               W-D-L = 13-0-2   Stonefish score = 86.7%
+
+Correlation (Pearson r):
+  find_rate     ~ outcome   : r = -0.534   (want strongly NEGATIVE for the trap mechanic to work)
+  trap_signed   ~ outcome   : r = -0.061   (want POSITIVE; bigger trap-net = win)
+  baseline_drift~ outcome   : r = +0.371   (want NEAR ZERO; if strong, drift is driving outcomes)
+
+Signal vs noise (pawns):
+  median |trap impact| per event:    0.620
+  median |non-trap drift| per move:  0.000
+  SNR (per-event / per-move):        infx
+  median |trap impact| per game:     3.130
+
+EquilibriumMaintainer view (drift from target_eval):
+  median |drift from target| per move:  0.170
+  mean   |drift from target| per move:  0.392
+  SNR (|trap event| / |target drift|):  3.65x
+  median |target drift| sum per game:   8.180
+
+Per-game breakdown:
+   G  outc   find  mom  fnd  mvs  base  gvbk  egPr  base_drift   trap_net
+   1     L    40%    5    2  140    26    10    29       +5.81      +5.47
+   2     W     0%    4    0   84    25     0    13      +13.76      +8.33
+   3     W    43%    7    3  183    58    15    12      +14.20      +5.12
+   4     W    25%    4    1   64    20     5     3       +6.49      +0.83
+   5     W    40%    5    2   97    22    10    12       +9.36      +1.28
+   6     W     0%    1    0  112    28     0    27      +10.86      +3.13
+   7     W    20%    5    1   83    19     5    13       +5.06      +3.48
+   8     W    33%    3    1   78    21     5    10       +4.22      +1.96
+   9     W     0%    2    0   93    27     0    18       +2.83      +0.71
+  10     W     0%    2    0   74    27     0     8      +19.92      +1.07
+  11     W    33%    3    1  115    30     5    20       +7.09      +1.28
+  12     W    40%    5    2  104    28    10     9       +7.89      +3.45
+  13     W    25%    4    1   99    20     5    21       +4.52      +2.79
+  14     W     0%    3    0   78    26     0    10       +6.50      +2.25
+  15     L    60%    5    3   92    26    15     0       +1.09      +0.77
+
+========================================================================
+BUCKET: find_prob = 0.5   (n=15 games)
+========================================================================
+Outcome:               W-D-L = 10-2-3   Stonefish score = 73.3%
+
+Correlation (Pearson r):
+  find_rate     ~ outcome   : r = -0.630   (want strongly NEGATIVE for the trap mechanic to work)
+  trap_signed   ~ outcome   : r = +0.675   (want POSITIVE; bigger trap-net = win)
+  baseline_drift~ outcome   : r = +0.538   (want NEAR ZERO; if strong, drift is driving outcomes)
+
+Signal vs noise (pawns):
+  median |trap impact| per event:    0.465
+  median |non-trap drift| per move:  0.000
+  SNR (per-event / per-move):        infx
+  median |trap impact| per game:     3.390
+
+EquilibriumMaintainer view (drift from target_eval):
+  median |drift from target| per move:  0.130
+  mean   |drift from target| per move:  0.540
+  SNR (|trap event| / |target drift|):  3.58x
+  median |target drift| sum per game:   10.050
+
+Per-game breakdown:
+   G  outc   find  mom  fnd  mvs  base  gvbk  egPr  base_drift   trap_net
+   1     W     0%    3    0  105    26     0    24      +10.41      +3.53
+   2     W    33%    3    1   82    25     5     8       +6.95      +2.28
+   3     W     0%    1    0   77    28     0    10      +10.54      +4.08
+   4     W    67%    3    2   76    25    10     0       +5.83      +1.97
+   5     D   100%    4    4  200    76    20     0       +5.05      -1.27
+   6     L    33%    6    2   63    17     8     0       +2.52      +2.13
+   7     D    67%    3    2  200    87    10     0       +1.70      -1.06
+   8     W    40%    5    2   88    19    10    10       +3.00      +1.47
+   9     W    40%    5    2  109    36    10     4      +14.65      +3.76
+  10     L    75%    4    3   79    20    15     0       +0.39      -0.64
+  11     W    33%    3    1   83    21     5    13       +7.74      +2.68
+  12     W     0%    2    0  124    27     0    33       +0.82      +0.88
+  13     W    17%    6    1   85    18     5    14       +7.79      +2.26
+  14     W    33%    3    1   94    26     5    13       +1.70      +1.93
+  15     L   100%    3    3   84    24    15     0       +2.11      -1.82
+
+========================================================================
+BUCKET: find_prob = 0.7   (n=15 games)
+========================================================================
+Outcome:               W-D-L = 3-4-8   Stonefish score = 33.3%
+
+Correlation (Pearson r):
+  find_rate     ~ outcome   : r = -0.843   (want strongly NEGATIVE for the trap mechanic to work)
+  trap_signed   ~ outcome   : r = +0.703   (want POSITIVE; bigger trap-net = win)
+  baseline_drift~ outcome   : r = +0.182   (want NEAR ZERO; if strong, drift is driving outcomes)
+
+Signal vs noise (pawns):
+  median |trap impact| per event:    0.445
+  median |non-trap drift| per move:  0.010
+  SNR (per-event / per-move):        44.50x
+  median |trap impact| per game:     2.030
+
+EquilibriumMaintainer view (drift from target_eval):
+  median |drift from target| per move:  0.200
+  mean   |drift from target| per move:  0.545
+  SNR (|trap event| / |target drift|):  2.23x
+  median |target drift| sum per game:   15.440
+
+Per-game breakdown:
+   G  outc   find  mom  fnd  mvs  base  gvbk  egPr  base_drift   trap_net
+   1     D    75%    4    3  200    81    15     0      +22.02      -0.63
+   2     W    33%    3    1  132    44     5    14       +9.69      +1.53
+   3     D    60%    5    3  200    80    15     0      +32.74      +0.28
+   4     L   100%    3    3  107    35    15     0       +4.35      -0.89
+   5     D    80%    5    4  137    44    20     0       +5.72      -1.01
+   6     L    80%    5    4   95    22    20     0       +2.94      -1.61
+   7     L   100%    2    2  100    38    10     0       +8.02      -0.66
+   8     L    67%    6    4  109    28    20     0       +1.92      -0.88
+   9     W    33%    3    1  121    30     5    23       +1.28      +2.65
+  10     D    71%    7    5  172    54    25     0       +6.09      -2.38
+  11     L    80%    5    4  152    51    20     0      +24.63      +0.33
+  12     L   100%    2    2   71    23    10     0       +0.72      -0.79
+  13     L   100%    3    3   70    17    15     0       +3.30      -0.99
+  14     L    67%    3    2   67    20    10     0       +1.20      -0.97
+  15     W     0%    2    0   65    27     0     4      +11.14      +1.57
+
+========================================================================
+BUCKET: find_prob = 0.9   (n=15 games)
+========================================================================
+Outcome:               W-D-L = 0-1-14   Stonefish score = 3.3%
+
+Correlation (Pearson r):
+  find_rate     ~ outcome   : r = +nan   (want strongly NEGATIVE for the trap mechanic to work)
+  trap_signed   ~ outcome   : r = +0.216   (want POSITIVE; bigger trap-net = win)
+  baseline_drift~ outcome   : r = +0.087   (want NEAR ZERO; if strong, drift is driving outcomes)
+
+Signal vs noise (pawns):
+  median |trap impact| per event:    0.340
+  median |non-trap drift| per move:  0.000
+  SNR (per-event / per-move):        infx
+  median |trap impact| per game:     1.255
+
+EquilibriumMaintainer view (drift from target_eval):
+  median |drift from target| per move:  0.090
+  mean   |drift from target| per move:  0.491
+  SNR (|trap event| / |target drift|):  3.78x
+  median |target drift| sum per game:   12.330
+
+Per-game breakdown:
+   G  outc   find  mom  fnd  mvs  base  gvbk  egPr  base_drift   trap_net
+   1     L   100%    2    2  100    38    10     0       +2.41      -1.07
+   2     L   100%    4    4   91    21    20     0       +1.71      -1.81
+   3     L   100%    2    2   62    19    10     0       +4.06      -0.80
+   4     L    75%    4    3   95    28    15     0       +2.67      -1.15
+   5     L    33%    3    1  166    54     5    21       +2.65      +2.49
+   6     L   100%    4    4   59     6    19     0       +0.81      -1.49
+   7     D    n/a    0    0  200   100     0     0       +2.01      +0.00
+   8     L    80%    5    4   67     8    20     0       +1.07      -1.40
+   9     L   100%    2    2   68    22    10     0       +0.94      -0.86
+  10     L   100%    1    1   63    25     5     0       +0.48      -0.26
+  11     L   100%    2    2   72    27     7     0       +2.29      -0.85
+  12     L   100%    3    3   65    14    15     0       +0.07      -0.91
+  13     L   100%    3    3   76    20    15     0       +0.83      -1.44
+  14     L    80%    5    4  115    32    20     0       +0.68      -2.69
+  15     L   100%    3    3  106    35    15     0       +2.34      -0.96
+
+========================================================================
+AGGREGATE
+========================================================================
+ prob     W-D-L  r(find,out)  r(trap,out)  r(drift,out)  SNR/event
+ 0.30    13-0-2       -0.534       -0.061        +0.371       infx
+ 0.50    10-2-3       -0.630       +0.675        +0.538       infx
+ 0.70     3-4-8       -0.843       +0.703        +0.182     44.50x
+ 0.90    0-1-14         +nan       +0.216        +0.087       infx
