@@ -320,6 +320,10 @@ class NettlesomeBot:
         # Counter of the bot's own moves remaining in "post-trap weakness"
         # mode. Decremented each choose_move call while > 0.
         self._post_trap_remaining = 0
+        # Flag set when give-back is about to end; next baseline-mode move
+        # refreshes the EquilibriumMaintainer target to the current eval
+        # (so equilibrium reflects post-give-back state, not pre-trap).
+        self._refresh_equilibrium_next = False
 
     def reset_stats(self, color: chess.Color):
         """Reset per-game stats. Call before a new game."""
@@ -327,6 +331,11 @@ class NettlesomeBot:
         self._move_counter = 0
         self._pending_moment = None
         self._post_trap_remaining = 0
+        self._refresh_equilibrium_next = False
+        # Reset the EquilibriumMaintainer's target to its initial value at
+        # game start. Only meaningful for baselines that have set_equilibrium.
+        if hasattr(self.baseline_bot, 'set_equilibrium'):
+            self.baseline_bot.set_equilibrium(0.0)
 
     def _in_endgame(self, board: chess.Board) -> bool:
         """Endgame heuristic: late move count OR few pieces remaining."""
@@ -335,9 +344,19 @@ class NettlesomeBot:
         piece_count = chess.popcount(board.occupied)
         return piece_count <= self.endgame_min_pieces
 
-    def note_opponent_reply(self, opponent_move: chess.Move):
+    def note_opponent_reply(self, opponent_move: chess.Move, board=None):
         """Record that the opponent just played `opponent_move`. If we set a
-        nettlesome trap on our previous move, classify the opponent's rank."""
+        nettlesome trap on our previous move, classify the opponent's rank.
+
+        If `board` is supplied (state PRE-opp-push) and the baseline bot
+        supports `set_equilibrium`, this also updates the baseline's target
+        eval after the trap resolves:
+          - trap-miss: equilibrium = eval after (our trap + opp reply).
+            Held until next trap.
+          - trap-find: equilibrium update deferred to after give-back ends.
+            A flag (_refresh_equilibrium_next) is armed for choose_move to
+            handle when give-back finishes.
+        """
         if self._pending_moment is None:
             return
         reply_uci = opponent_move.uci()
@@ -347,13 +366,43 @@ class NettlesomeBot:
             self._pending_moment.opponent_rank = idx + 1
         except ValueError:
             self._pending_moment.opponent_rank = 4  # outside the top-N we tracked
+        rank = self._pending_moment.opponent_rank
         # If the opponent FOUND our trap (played SF #1 reply), trigger
         # post-trap weakness: Stonefish plays its weaker post_trap_baseline
         # for the next N of its own moves so the opponent can convert.
-        if (self._pending_moment.opponent_rank == 1
-                and self.post_trap_baseline is not None):
+        if rank == 1 and self.post_trap_baseline is not None:
             self._post_trap_remaining = self.post_trap_duration
+            # Defer equilibrium refresh until give-back ends -- the new
+            # equilibrium should be the post-give-back eval, not the
+            # immediate post-trap-resolution eval.
+            self._refresh_equilibrium_next = True
+        else:
+            # Trap missed (or no give-back configured): set equilibrium to
+            # the post-resolution eval right now.
+            if (board is not None
+                    and self.baseline_bot is not None
+                    and hasattr(self.baseline_bot, 'set_equilibrium')):
+                self._set_equilibrium_after(board, opponent_move)
         self._pending_moment = None
+
+    def _set_equilibrium_after(self, board, opp_move):
+        """Eval the position after `opp_move` and update baseline equilibrium."""
+        post = board.copy()
+        post.push(opp_move)
+        self._set_equilibrium_to_board(post)
+
+    def _set_equilibrium_to_board(self, board):
+        """Set baseline equilibrium to the eval of `board` (from our POV)."""
+        if board.is_game_over():
+            return
+        info = self.engine.analyse(board, chess.engine.Limit(depth=self.depth))
+        score = info["score"].white()
+        if score.is_mate():
+            raw = 99.99 if score.mate() > 0 else -99.99
+        else:
+            raw = score.score() / 100.0
+        sign = 1.0 if self.stats.color == chess.WHITE else -1.0
+        self.baseline_bot.set_equilibrium(raw * sign)
 
     def choose_move(self, board):
         """Choose the most nettlesome move.
@@ -377,6 +426,15 @@ class NettlesomeBot:
         if self._post_trap_remaining > 0 and self.post_trap_baseline is not None:
             self._post_trap_remaining -= 1
             return self.post_trap_baseline.choose_move(board)
+
+        # If we just exited give-back, refresh the baseline equilibrium to
+        # the current eval -- the post-give-back state becomes the new
+        # equilibrium that the maintainer holds until the next trap.
+        if (self._refresh_equilibrium_next
+                and self.baseline_bot is not None
+                and hasattr(self.baseline_bot, 'set_equilibrium')):
+            self._set_equilibrium_to_board(board)
+            self._refresh_equilibrium_next = False
 
         candidates = get_top_moves(self.engine, board,
                                    num_moves=self.num_candidates,
@@ -730,6 +788,57 @@ class EquilibriumBaselineBot:
         return f"Equilibrium(target=-{self.target_delta:.2f}p,rating~{self.rating})"
 
 
+class EquilibriumMaintainerBot:
+    """Baseline that holds the absolute eval at a target set by trap events.
+
+    On every move, picks the SF-top-N candidate whose post-move eval is
+    closest to `target_eval` (in pawns, from this bot's perspective). The
+    target is held fixed between traps and updated externally (by
+    NettlesomeBot) after each trap resolves -- so the game eval becomes a
+    step function: flat between traps, a jump at each trap.
+
+    Crucially, when the opponent slips in a non-trap position, this bot
+    intentionally picks a sub-optimal move to give the gain back, restoring
+    the equilibrium. Result: trap resolution is the only thing that moves
+    the score. Eliminates the baseline drift that bursts of
+    UCI_LimitStrength weakening produced under WeakenedStockfishBot.
+    """
+
+    def __init__(self, sf_engine, depth=10, num_candidates=8,
+                 initial_target=0.0):
+        self.sf = sf_engine
+        self.depth = depth
+        self.num_candidates = num_candidates
+        self.target_eval = initial_target
+
+    def set_equilibrium(self, eval_for_us: float):
+        """Update the target eval. Called by NettlesomeBot after trap events."""
+        self.target_eval = max(-10.0, min(10.0, eval_for_us))
+
+    def choose_move(self, board):
+        candidates = get_top_moves(self.sf, board,
+                                   num_moves=self.num_candidates,
+                                   depth=self.depth)
+        if not candidates:
+            return random.choice(list(board.legal_moves))
+
+        sign = 1.0 if board.turn == chess.WHITE else -1.0
+        # Score each candidate by absolute distance to target_eval (in our units)
+        scored = []
+        for move, eval_cp in candidates:
+            eval_for_us = max(-10.0, min(10.0, eval_cp * sign))
+            scored.append((move, abs(eval_for_us - self.target_eval)))
+        scored.sort(key=lambda x: x[1])
+        return scored[0][0]
+
+    def quit(self):
+        pass
+
+    @property
+    def name(self):
+        return f"EqMaintainer(target={self.target_eval:+.2f}p)"
+
+
 class CoinFlipTesterBot:
     """A synthetic opponent for isolating the trap mechanic from opponent variance.
 
@@ -913,7 +1022,7 @@ def play_game(white_bot, black_bot, max_moves=200, verbose=False, live=False,
 
         # Tell the passive bot what just landed -- it may want to classify
         if isinstance(passive, NettlesomeBot):
-            passive.note_opponent_reply(move)
+            passive.note_opponent_reply(move, board=board)
 
         moves.append(move)
         board.push(move)

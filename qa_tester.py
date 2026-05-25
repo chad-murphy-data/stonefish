@@ -24,7 +24,8 @@ import chess.engine
 from dataclasses import asdict
 
 from engine import (
-    NettlesomeBot, CoinFlipTesterBot, EquilibriumBaselineBot, STOCKFISH_PATH,
+    NettlesomeBot, CoinFlipTesterBot, EquilibriumBaselineBot,
+    EquilibriumMaintainerBot, STOCKFISH_PATH,
     play_game, get_top_moves,
 )
 from maia_policy import MaiaPolicyEngine
@@ -77,6 +78,8 @@ def play_game_logged(stonefish, opponent, stone_white, sf, depth, max_moves=200)
         if is_stone:
             pre_moments = len(stonefish.stats.moments)
             pre_post_trap = stonefish._post_trap_remaining
+            # Snapshot baseline's equilibrium target for the analyzer
+            target_eval = getattr(stonefish.baseline_bot, 'target_eval', None)
             # Full-strength SF top moves (depth = bot's analysis depth) so
             # we can score the played move's eval_cost vs SF top.
             top_pre = get_top_moves(sf, board, num_moves=8, depth=depth)
@@ -135,12 +138,14 @@ def play_game_logged(stonefish, opponent, stone_white, sf, depth, max_moves=200)
                 "eval_cost": round(top_eval - played_eval, 3),
                 "top_eval": round(top_eval, 3),
                 "played_eval": round(played_eval, 3),
+                "target_eval": (round(target_eval, 3)
+                                if target_eval is not None else None),
                 "in_top8": played_uci in top_by_uci,
                 "trap_idx": trap_idx,
             })
 
         if passive is stonefish:
-            stonefish.note_opponent_reply(move)
+            stonefish.note_opponent_reply(move, board=board)
 
         board.push(move)
 
@@ -154,7 +159,12 @@ def play_game_logged(stonefish, opponent, stone_white, sf, depth, max_moves=200)
 
 def run_for_probability(find_prob, num_games, depth, sf, oracle):
     from engine import WeakenedStockfishBot
-    baseline = WeakenedStockfishBot(STOCKFISH_PATH, target_elo=1900, move_time=0.3)
+    # EquilibriumMaintainer: holds eval at target_eval (initial 0.0,
+    # updated by NettlesomeBot after each trap resolves / after give-back).
+    # Between traps, eval is locked. The only thing that moves the score
+    # is trap resolution.
+    baseline = EquilibriumMaintainerBot(sf, depth=depth, num_candidates=8,
+                                         initial_target=0.0)
     give_back = WeakenedStockfishBot(STOCKFISH_PATH, target_elo=1500, move_time=0.3)
     stonefish = make_stonefish(sf, oracle, baseline, give_back, depth)
     # Seed the tester deterministically (varies across prob-buckets via the prob)

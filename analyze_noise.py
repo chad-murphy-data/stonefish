@@ -72,6 +72,20 @@ def per_game_stats(g):
     baseline_costs = [m["eval_cost"] for m in moves_log if m["mode"] == "baseline"]
     give_back_costs = [m["eval_cost"] for m in moves_log if m["mode"] == "give_back"]
 
+    # For EquilibriumMaintainer baselines: "drift from target" is the
+    # real noise metric. eval_cost is misleading because the maintainer
+    # INTENTIONALLY plays sub-SF moves to hit target. What we actually
+    # care about is whether played_eval lands near target_eval -- if so,
+    # the baseline is silent and only traps move the score.
+    baseline_drift_from_target = []
+    for m in moves_log:
+        if m["mode"] != "baseline":
+            continue
+        t = m.get("target_eval")
+        if t is None:
+            continue
+        baseline_drift_from_target.append(m["played_eval"] - t)
+
     impacts = [trap_impact(m) for m in moments_data]
     signed_total = sum(impacts)
     abs_total = sum(abs(i) for i in impacts)
@@ -92,6 +106,12 @@ def per_game_stats(g):
         "baseline_drift_total": sum(baseline_costs),
         "baseline_drift_per_move": (mean(baseline_costs) if baseline_costs else 0.0),
         "give_back_drift_total": sum(give_back_costs),
+        # EquilibriumMaintainer-specific: signed and absolute drift from target
+        "baseline_target_drift_signed": sum(baseline_drift_from_target),
+        "baseline_target_drift_abs_sum": sum(abs(d) for d in baseline_drift_from_target),
+        "baseline_target_drift_per_move": (mean(baseline_drift_from_target)
+                                            if baseline_drift_from_target else 0.0),
+        "n_baseline_with_target": len(baseline_drift_from_target),
         "trap_signed_total": signed_total,
         "trap_abs_total": abs_total,
         "trap_impacts": impacts,
@@ -163,6 +183,33 @@ def analyze_bucket(prob, bucket):
     print(f"  median |non-trap drift| per move:  {med_drift_per_move:.3f}")
     print(f"  SNR (per-event / per-move):        {snr_per_event:.2f}x")
     print(f"  median |trap impact| per game:     {med_trap_per_game:.3f}")
+
+    # EquilibriumMaintainer view: drift from target. Only meaningful if
+    # target_eval was logged (i.e., baseline supports set_equilibrium).
+    target_drift_abs = []
+    for g in games:
+        for m in g.get("moves_log", []):
+            if m["mode"] != "baseline":
+                continue
+            t = m.get("target_eval")
+            if t is None:
+                continue
+            target_drift_abs.append(abs(m["played_eval"] - t))
+    if target_drift_abs:
+        med_target_drift = median(target_drift_abs)
+        mean_target_drift = mean(target_drift_abs)
+        snr_vs_target = (med_trap_per_event / med_target_drift
+                         if med_target_drift > 0 else float("inf"))
+        med_per_game_target = median([r["baseline_target_drift_abs_sum"]
+                                       for r in rows
+                                       if r["n_baseline_with_target"] > 0]
+                                      or [0.0])
+        print()
+        print("EquilibriumMaintainer view (drift from target_eval):")
+        print(f"  median |drift from target| per move:  {med_target_drift:.3f}")
+        print(f"  mean   |drift from target| per move:  {mean_target_drift:.3f}")
+        print(f"  SNR (|trap event| / |target drift|):  {snr_vs_target:.2f}x")
+        print(f"  median |target drift| sum per game:   {med_per_game_target:.3f}")
     print()
     print("Per-game breakdown:")
     print(f"  {'G':>2}  {'outc':>4}  {'find':>5}  {'mom':>3}  {'fnd':>3}  "
