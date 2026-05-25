@@ -25,7 +25,8 @@ import chess
 import chess.engine
 
 from engine import (
-    NettlesomeBot, MaiaBot, EquilibriumBaselineBot, STOCKFISH_PATH,
+    NettlesomeBot, MaiaBot, EquilibriumBaselineBot,
+    EquilibriumMaintainerBot, STOCKFISH_PATH,
     play_game,
 )
 from maia_policy import MaiaPolicyEngine
@@ -67,10 +68,14 @@ def run_qa(num_games: int, depth: int):
     sf = chess.engine.SimpleEngine.popen_uci(STOCKFISH_PATH)
     sf.configure({"Threads": 2, "Hash": 256})
     oracle = MaiaPolicyEngine(maia_weights)
-    # Baseline = SF at UCI_Elo=1900 (genuine 1900 strength)
-    from engine import WeakenedStockfishBot
-    baseline = WeakenedStockfishBot(STOCKFISH_PATH, target_elo=1900, move_time=0.3)
+    # Baseline = EquilibriumMaintainer: holds eval at a target set by trap
+    # events. Between traps, trap resolution is the only thing that moves
+    # the score. Replaced WeakenedStockfishBot(1900) baseline whose bursty
+    # randomized weakening was drowning out the trap signal.
+    baseline = EquilibriumMaintainerBot(sf, depth=depth, num_candidates=8,
+                                         initial_target=0.0)
     # Give-back = SF at UCI_Elo=1500 for 5 moves after find
+    from engine import WeakenedStockfishBot
     give_back = WeakenedStockfishBot(STOCKFISH_PATH, target_elo=1500, move_time=0.3)
     stonefish = make_stonefish(sf, oracle, baseline, give_back, depth)
     maia_opponent = MaiaBot(maia_weights, temperature=1.0, seed=99)
