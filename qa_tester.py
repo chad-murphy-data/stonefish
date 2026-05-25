@@ -48,8 +48,9 @@ def make_stonefish(sf_engine, maia_oracle, baseline, give_back, depth):
 
 
 def run_for_probability(find_prob, num_games, depth, sf, oracle):
-    baseline = EquilibriumBaselineBot(sf, oracle, target_delta=0.3, depth=depth, rating=1900)
-    give_back = EquilibriumBaselineBot(sf, oracle, target_delta=0.7, depth=depth, rating=1900)
+    from engine import WeakenedStockfishBot
+    baseline = WeakenedStockfishBot(STOCKFISH_PATH, target_elo=1900, move_time=0.3)
+    give_back = WeakenedStockfishBot(STOCKFISH_PATH, target_elo=1500, move_time=0.3)
     stonefish = make_stonefish(sf, oracle, baseline, give_back, depth)
     # Seed the tester deterministically (varies across prob-buckets via the prob)
     # baseline_target_delta=0 -> tester plays SF top in non-trap positions

@@ -824,6 +824,51 @@ class CoinFlipTesterBot:
         return f"CoinFlipTester(p={self.find_probability:.2f})"
 
 
+class WeakenedStockfishBot:
+    """Stockfish playing at a target Elo via UCI_LimitStrength.
+
+    Unlike EquilibriumBaselineBot (which is full-strength SF that throttles
+    move-by-move), this uses Stockfish's own self-calibration to play at
+    an approximate Elo. Plays at realistic 1900-ish strength with the kind
+    of mistakes a real player at that rating would make.
+
+    Used as the baseline for non-trap moves so the bot is genuinely
+    1900-strength between traps, not just engine-with-handicap.
+    """
+
+    def __init__(self, sf_path: str, target_elo: int = 1900,
+                 threads: int = 1, hash_mb: int = 64, move_time: float = 0.3):
+        self.sf_path = sf_path
+        self.target_elo = max(1320, min(3190, target_elo))
+        self.move_time = move_time
+        self._engine = chess.engine.SimpleEngine.popen_uci(sf_path)
+        self._engine.configure({
+            "Threads": threads,
+            "Hash": hash_mb,
+            "UCI_LimitStrength": True,
+            "UCI_Elo": self.target_elo,
+        })
+
+    def choose_move(self, board):
+        try:
+            result = self._engine.play(board, chess.engine.Limit(time=self.move_time))
+            if result.move is not None:
+                return result.move
+        except Exception:
+            pass
+        return random.choice(list(board.legal_moves))
+
+    def quit(self):
+        try:
+            self._engine.quit()
+        except Exception:
+            pass
+
+    @property
+    def name(self):
+        return f"SF(Elo={self.target_elo})"
+
+
 def play_game(white_bot, black_bot, max_moves=200, verbose=False, live=False,
               game_label=""):
     """Play a single game between two bots. Returns result from white's perspective.
@@ -1040,20 +1085,18 @@ if __name__ == "__main__":
     from maia_policy import MaiaPolicyEngine
     maia_oracle = MaiaPolicyEngine(maia_weights, rating=maia_rating)
 
-    # Baseline (between traps) = Equilibrium SF at target_delta=0.3.
-    # Stonefish gives back ~0.3p of eval per move, matching opp's
-    # expected ~1900 inaccuracy. Stable, low-variance baseline that
-    # avoids Maia's catastrophic single-move blunders.
-    baseline_eq = EquilibriumBaselineBot(
-        engine, maia_oracle, target_delta=0.3, depth=depth, rating=1900,
+    # Baseline (between traps) = Stockfish at UCI_Elo=1900. Genuine
+    # 1900-strength play with the kind of mistakes a real 1900 makes
+    # (not just an engine that hands back 0.3p per move).
+    baseline_eq = WeakenedStockfishBot(
+        STOCKFISH_PATH, target_elo=1900, move_time=0.3,
     )
 
-    # Post-find give-back: 0.7p target = 0.4p more per move than baseline.
-    # Over 5 moves: ~+2.0p of extra advantage handed to opp for solving a trap
-    # -- big enough that finding a trap is a decisive shift at 1900-level
-    # play, where +1p often draws and +2p is winning.
-    give_back_baseline = EquilibriumBaselineBot(
-        engine, maia_oracle, target_delta=0.7, depth=depth, rating=1900,
+    # Post-find give-back: even weaker SF for 5 moves after the opponent
+    # solves a trap. Elo 1500 plays visibly worse -- the bot "cracks"
+    # after the puzzle is found, giving the opp a real chance to convert.
+    give_back_baseline = WeakenedStockfishBot(
+        STOCKFISH_PATH, target_elo=1500, move_time=0.3,
     )
 
     # Symmetric puzzle filter: gap is bounded BOTH above and below relative

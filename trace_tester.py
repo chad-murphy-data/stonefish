@@ -38,8 +38,9 @@ def main(our_color_str: str, find_prob: float, depth: int, tester_seed: int):
     sf.configure({"Threads": 2, "Hash": 256})
     oracle = MaiaPolicyEngine(weights)
 
-    baseline = EquilibriumBaselineBot(sf, oracle, target_delta=0.3, depth=depth, rating=1900)
-    give_back = EquilibriumBaselineBot(sf, oracle, target_delta=0.7, depth=depth, rating=1900)
+    from engine import WeakenedStockfishBot
+    baseline = WeakenedStockfishBot(STOCKFISH_PATH, target_elo=1900, move_time=0.3)
+    give_back = WeakenedStockfishBot(STOCKFISH_PATH, target_elo=1500, move_time=0.3)
 
     stonefish = NettlesomeBot(
         sf, num_candidates=7, num_responses=3,

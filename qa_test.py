@@ -67,13 +67,11 @@ def run_qa(num_games: int, depth: int):
     sf = chess.engine.SimpleEngine.popen_uci(STOCKFISH_PATH)
     sf.configure({"Threads": 2, "Hash": 256})
     oracle = MaiaPolicyEngine(maia_weights)
-    # Baseline = Equilibrium SF at target_delta=0.3 (stable ~1900 strength)
-    baseline = EquilibriumBaselineBot(sf, oracle, target_delta=0.3,
-                                       depth=depth, rating=1900)
-    # Give-back = +0.4p extra per move (target_delta=0.7) for 5 plies after find
-    # ~+2p over 5 moves -- decisive at 1900 level
-    give_back = EquilibriumBaselineBot(sf, oracle, target_delta=0.7,
-                                        depth=depth, rating=1900)
+    # Baseline = SF at UCI_Elo=1900 (genuine 1900 strength)
+    from engine import WeakenedStockfishBot
+    baseline = WeakenedStockfishBot(STOCKFISH_PATH, target_elo=1900, move_time=0.3)
+    # Give-back = SF at UCI_Elo=1500 for 5 moves after find
+    give_back = WeakenedStockfishBot(STOCKFISH_PATH, target_elo=1500, move_time=0.3)
     stonefish = make_stonefish(sf, oracle, baseline, give_back, depth)
     maia_opponent = MaiaBot(maia_weights, temperature=1.0, seed=99)
 
