@@ -21,10 +21,11 @@ import time
 import json
 import chess
 import chess.engine
+from dataclasses import asdict
 
 from engine import (
     NettlesomeBot, CoinFlipTesterBot, EquilibriumBaselineBot, STOCKFISH_PATH,
-    play_game,
+    play_game, get_top_moves,
 )
 from maia_policy import MaiaPolicyEngine
 
@@ -47,6 +48,110 @@ def make_stonefish(sf_engine, maia_oracle, baseline, give_back, depth):
     )
 
 
+def play_game_logged(stonefish, opponent, stone_white, sf, depth, max_moves=200):
+    """Play Stonefish vs CoinFlipTester and log per-Stonefish-move data for
+    noise analysis. Mirrors engine.play_game but additionally records, for
+    each Stonefish move:
+      - mode: "trap" | "give_back" | "endgame_precise" | "baseline"
+      - eval_cost: full-SF top-eval minus eval-after-played-move (in pawns,
+        from Stonefish's perspective)
+      - top_eval, played_eval (both in side-to-move-friendly units)
+      - trap_idx: index into stonefish.stats.moments for "trap" rows
+    """
+    board = chess.Board()
+    stone_color = chess.WHITE if stone_white else chess.BLACK
+    stonefish.reset_stats(stone_color)
+
+    white = stonefish if stone_white else opponent
+    black = opponent if stone_white else stonefish
+    move_log = []
+
+    ply = 0
+    while ply < max_moves and not board.is_game_over():
+        ply += 1
+        is_stone = (board.turn == stone_color)
+        active = white if board.turn == chess.WHITE else black
+        passive = black if board.turn == chess.WHITE else white
+        sign = 1.0 if board.turn == chess.WHITE else -1.0
+
+        if is_stone:
+            pre_moments = len(stonefish.stats.moments)
+            pre_post_trap = stonefish._post_trap_remaining
+            # Full-strength SF top moves (depth = bot's analysis depth) so
+            # we can score the played move's eval_cost vs SF top.
+            top_pre = get_top_moves(sf, board, num_moves=8, depth=depth)
+            top_eval = (top_pre[0][1] * sign) if top_pre else 0.0
+            # Cap mate-y spikes
+            top_eval = max(-10.0, min(10.0, top_eval))
+            top_by_uci = {m.uci(): max(-10.0, min(10.0, e * sign))
+                          for m, e in top_pre}
+
+        move = active.choose_move(board)
+
+        if is_stone:
+            post_moments = len(stonefish.stats.moments)
+            if post_moments > pre_moments:
+                mode = "trap"
+                trap_idx = post_moments - 1
+            elif pre_post_trap > 0:
+                mode = "give_back"
+                trap_idx = None
+            else:
+                # Endgame-precise vs baseline check (mirrors NettlesomeBot
+                # logic; _move_counter has already been incremented by
+                # choose_move so _in_endgame sees the up-to-date count)
+                solve_rate = (stonefish.stats.n_opp_found_top /
+                              stonefish.stats.n_moments
+                              if stonefish.stats.n_moments > 0 else 0.0)
+                if (stonefish.endgame_mode and stonefish._in_endgame(board)
+                        and stonefish.stats.n_moments > 0
+                        and solve_rate < 0.5):
+                    mode = "endgame_precise"
+                else:
+                    mode = "baseline"
+                trap_idx = None
+
+            played_uci = move.uci()
+            if played_uci in top_by_uci:
+                played_eval = top_by_uci[played_uci]
+            else:
+                # Played move outside top-8: evaluate fresh after the push
+                tmp = board.copy(); tmp.push(move)
+                if tmp.is_game_over():
+                    res = tmp.result()
+                    raw_white = (99.99 if res == "1-0" else
+                                 -99.99 if res == "0-1" else 0.0)
+                else:
+                    info = sf.analyse(tmp, chess.engine.Limit(depth=depth))
+                    s = info["score"].white()
+                    raw_white = ((99.99 if s.mate() > 0 else -99.99)
+                                 if s.is_mate() else s.score() / 100.0)
+                # Convert to side-to-move (us, who just played)
+                played_eval = max(-10.0, min(10.0, raw_white * sign))
+
+            move_log.append({
+                "ply": ply,
+                "mode": mode,
+                "eval_cost": round(top_eval - played_eval, 3),
+                "top_eval": round(top_eval, 3),
+                "played_eval": round(played_eval, 3),
+                "in_top8": played_uci in top_by_uci,
+                "trap_idx": trap_idx,
+            })
+
+        if passive is stonefish:
+            stonefish.note_opponent_reply(move)
+
+        board.push(move)
+
+    result_str = board.result()
+    result = 1.0 if result_str == "1-0" else (0.0 if result_str == "0-1" else 0.5)
+    bot_score = result if stone_white else (1.0 - result)
+    stonefish.stats.result = bot_score
+    stonefish.stats.total_moves = ply
+    return bot_score, ply, move_log
+
+
 def run_for_probability(find_prob, num_games, depth, sf, oracle):
     from engine import WeakenedStockfishBot
     baseline = WeakenedStockfishBot(STOCKFISH_PATH, target_elo=1900, move_time=0.3)
@@ -63,17 +168,13 @@ def run_for_probability(find_prob, num_games, depth, sf, oracle):
     games = []
     print(f"\n=== find_probability = {find_prob:.2f} ({num_games} games) ===", flush=True)
     for g in range(num_games):
-        if g % 2 == 0:
-            white, black = stonefish, tester
-            stone_white = True
-        else:
-            white, black = tester, stonefish
-            stone_white = False
+        stone_white = (g % 2 == 0)
 
         start = time.time()
-        white_score, num_moves, _ = play_game(white, black, verbose=False)
+        bot_score, num_moves, move_log = play_game_logged(
+            stonefish, tester, stone_white, sf, depth,
+        )
         elapsed = time.time() - start
-        bot_score = white_score if stone_white else (1.0 - white_score)
 
         stats = stonefish.stats
         moments = stats.n_moments
@@ -83,6 +184,9 @@ def run_for_probability(find_prob, num_games, depth, sf, oracle):
         games.append({
             "g": g + 1, "moves": num_moves, "moments": moments, "found": found,
             "find_rate": find_rate, "bot_score": bot_score, "elapsed": elapsed,
+            "stone_white": stone_white,
+            "moments_data": [asdict(m) for m in stats.moments],
+            "moves_log": move_log,
         })
         outcome = "W" if bot_score == 1.0 else ("L" if bot_score == 0.0 else "D")
         find_str = f"{find_rate*100:>4.0f}%" if find_rate is not None else "  n/a"
