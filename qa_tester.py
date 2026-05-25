@@ -163,7 +163,12 @@ def run_for_probability(find_prob, num_games, depth, sf, oracle):
     # updated by NettlesomeBot after each trap resolves / after give-back).
     # Between traps, eval is locked. The only thing that moves the score
     # is trap resolution.
-    baseline = EquilibriumMaintainerBot(sf, depth=depth, num_candidates=8,
+    # SF top-15 + Maia top-10 expansion -- Maia surfaces 1900-plausible
+    # moves SF didn't include in its top-N, letting the maintainer reach
+    # further from SF #1 when needed.
+    baseline = EquilibriumMaintainerBot(sf, maia_oracle=oracle, depth=depth,
+                                         num_sf_candidates=15,
+                                         num_maia_candidates=10,
                                          initial_target=0.0)
     give_back = WeakenedStockfishBot(STOCKFISH_PATH, target_elo=1500, move_time=0.3)
     stonefish = make_stonefish(sf, oracle, baseline, give_back, depth)

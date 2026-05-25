@@ -72,7 +72,9 @@ def run_qa(num_games: int, depth: int):
     # events. Between traps, trap resolution is the only thing that moves
     # the score. Replaced WeakenedStockfishBot(1900) baseline whose bursty
     # randomized weakening was drowning out the trap signal.
-    baseline = EquilibriumMaintainerBot(sf, depth=depth, num_candidates=8,
+    baseline = EquilibriumMaintainerBot(sf, maia_oracle=oracle, depth=depth,
+                                         num_sf_candidates=15,
+                                         num_maia_candidates=10,
                                          initial_target=0.0)
     # Give-back = SF at UCI_Elo=1500 for 5 moves after find
     from engine import WeakenedStockfishBot

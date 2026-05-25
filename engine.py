@@ -791,52 +791,105 @@ class EquilibriumBaselineBot:
 class EquilibriumMaintainerBot:
     """Baseline that holds the absolute eval at a target set by trap events.
 
-    On every move, picks the SF-top-N candidate whose post-move eval is
-    closest to `target_eval` (in pawns, from this bot's perspective). The
-    target is held fixed between traps and updated externally (by
-    NettlesomeBot) after each trap resolves -- so the game eval becomes a
-    step function: flat between traps, a jump at each trap.
+    On every move, picks the candidate (across SF top-N + Maia top-M) whose
+    post-move eval is closest to `target_eval` (in pawns, from this bot's
+    perspective). The target is held fixed between traps and updated
+    externally (by NettlesomeBot) after each trap resolves -- so the game
+    eval becomes a step function: flat between traps, a jump at each trap.
 
-    Crucially, when the opponent slips in a non-trap position, this bot
-    intentionally picks a sub-optimal move to give the gain back, restoring
-    the equilibrium. Result: trap resolution is the only thing that moves
-    the score. Eliminates the baseline drift that bursts of
-    UCI_LimitStrength weakening produced under WeakenedStockfishBot.
+    When `maia_oracle` is supplied, the candidate pool expands beyond SF's
+    top-N to also include Maia's most-likely moves for the rating Maia is
+    weighted at. This lets the maintainer reach further from SF #1 when
+    the position requires a bigger give-back, using moves a player at the
+    target rating would plausibly play. Maia-only candidates that SF
+    didn't surface are SF-evaluated on the fly.
+
+    When opp slips on a non-trap move, this bot intentionally picks a
+    sub-optimal move to give the gain back, restoring the equilibrium.
+    Trap resolution is then the only thing that meaningfully moves the
+    score.
     """
 
-    def __init__(self, sf_engine, depth=10, num_candidates=8,
+    def __init__(self, sf_engine, maia_oracle=None, depth=10,
+                 num_sf_candidates=15, num_maia_candidates=10,
                  initial_target=0.0):
         self.sf = sf_engine
+        self.maia_oracle = maia_oracle
         self.depth = depth
-        self.num_candidates = num_candidates
+        self.num_sf_candidates = num_sf_candidates
+        self.num_maia_candidates = num_maia_candidates
         self.target_eval = initial_target
 
     def set_equilibrium(self, eval_for_us: float):
         """Update the target eval. Called by NettlesomeBot after trap events."""
         self.target_eval = max(-10.0, min(10.0, eval_for_us))
 
+    def _eval_move_for_us(self, board, move, sign):
+        """SF-evaluate one move, return eval from our perspective in pawns."""
+        tmp = board.copy()
+        tmp.push(move)
+        if tmp.is_game_over():
+            res = tmp.result()
+            raw_white = (99.99 if res == "1-0" else
+                         -99.99 if res == "0-1" else 0.0)
+        else:
+            info = self.sf.analyse(tmp, chess.engine.Limit(depth=self.depth))
+            s = info["score"].white()
+            raw_white = ((99.99 if s.mate() > 0 else -99.99)
+                         if s.is_mate() else s.score() / 100.0)
+        return max(-10.0, min(10.0, raw_white * sign))
+
     def choose_move(self, board):
-        candidates = get_top_moves(self.sf, board,
-                                   num_moves=self.num_candidates,
-                                   depth=self.depth)
-        if not candidates:
+        sign = 1.0 if board.turn == chess.WHITE else -1.0
+
+        # SF top-N as the starting candidate set.
+        sf_candidates = get_top_moves(self.sf, board,
+                                      num_moves=self.num_sf_candidates,
+                                      depth=self.depth)
+        if not sf_candidates:
             return random.choice(list(board.legal_moves))
 
-        sign = 1.0 if board.turn == chess.WHITE else -1.0
-        # Score each candidate by absolute distance to target_eval (in our units)
-        scored = []
-        for move, eval_cp in candidates:
+        # uci -> (move, eval_for_us). Use uci as key so we can dedupe
+        # against Maia suggestions.
+        pool = {}
+        for move, eval_cp in sf_candidates:
             eval_for_us = max(-10.0, min(10.0, eval_cp * sign))
-            scored.append((move, abs(eval_for_us - self.target_eval)))
-        scored.sort(key=lambda x: x[1])
-        return scored[0][0]
+            pool[move.uci()] = (move, eval_for_us)
+
+        # Optionally expand with Maia top-M -- moves a player at Maia's
+        # rating would plausibly play that SF didn't include in its top-N.
+        if self.maia_oracle is not None and self.num_maia_candidates > 0:
+            try:
+                maia_policy = self.maia_oracle.predict_policy(board)
+            except Exception:
+                maia_policy = {}
+            maia_top = sorted(maia_policy.items(),
+                              key=lambda x: -x[1])[:self.num_maia_candidates]
+            for move, _prob in maia_top:
+                if move.uci() in pool:
+                    continue
+                # Maia move SF didn't surface in top-N; eval it
+                eval_for_us = self._eval_move_for_us(board, move, sign)
+                pool[move.uci()] = (move, eval_for_us)
+
+        # Pick candidate whose eval is closest to target.
+        best_move, best_dist = None, float("inf")
+        for move, eval_for_us in pool.values():
+            dist = abs(eval_for_us - self.target_eval)
+            if dist < best_dist:
+                best_dist = dist
+                best_move = move
+        return best_move
 
     def quit(self):
         pass
 
     @property
     def name(self):
-        return f"EqMaintainer(target={self.target_eval:+.2f}p)"
+        base = f"EqMaintainer(target={self.target_eval:+.2f}p"
+        if self.maia_oracle is not None:
+            base += f",sf={self.num_sf_candidates},maia={self.num_maia_candidates}"
+        return base + ")"
 
 
 class CoinFlipTesterBot:
