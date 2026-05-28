@@ -273,6 +273,91 @@ def score_candidate_move(engine, board, candidate_move, num_responses=3, depth=1
     )
 
 
+def find_puzzle_trap(sf, maia_oracle, board, depth=10, num_candidates=7,
+                     num_responses=3, max_eval_cost=1.5,
+                     min_eval_cost=0.20, min_gap=0.50, min_gap_ratio=1.5,
+                     p_maia_min=0.20, p_maia_max=0.80):
+    """Run Stonefish's trap filter on the current board.
+
+    Standalone version of the trap-mode logic embedded in
+    NettlesomeBot.choose_move. Returns the chosen trap move + metadata,
+    plus the full filtered list of qualifying candidates, or `None` if
+    no candidate passes the filter for this position.
+
+    Returns dict shape:
+      {
+        "trap": {move, san, sf_top_san, eval_cost, gap, p_maia_top,
+                 sf_top_reply_san, ev},
+        "all_qualifying": [<same shape>, ...]    # sorted by |p - 0.5|
+      }
+    """
+    candidates = get_top_moves(sf, board, num_moves=num_candidates, depth=depth)
+    if not candidates:
+        return None
+    sf_top_move, sf_top_eval = candidates[0]
+    sign = 1.0 if board.turn == chess.WHITE else -1.0
+    best_eval_for_us = sf_top_eval * sign
+
+    qualifying = []
+    for move, eval_cp in candidates:
+        if move == sf_top_move:
+            continue
+        eval_for_us = eval_cp * sign
+        eval_cost = best_eval_for_us - eval_for_us
+        if eval_cost > max_eval_cost or eval_cost < min_eval_cost:
+            continue
+        ms = score_candidate_move(sf, board, move,
+                                  num_responses=num_responses, depth=depth)
+        gap = ms.second_response_eval - ms.best_response_eval
+        if gap < min_gap:
+            continue
+        if eval_cost > 0:
+            ratio = gap / eval_cost
+            if ratio < min_gap_ratio:
+                continue
+        next_board = board.copy()
+        next_board.push(move)
+        if next_board.is_game_over():
+            continue
+        try:
+            policy = maia_oracle.predict_policy(next_board)
+        except Exception:
+            continue
+        sf_top_reply = ms.top_response_moves[0] if ms.top_response_moves else None
+        p_top = policy.get(sf_top_reply, 0.0) if sf_top_reply else 0.0
+        if not (p_maia_min <= p_top <= p_maia_max):
+            continue
+        try:
+            san = board.san(move)
+        except Exception:
+            san = move.uci()
+        try:
+            sf_top_san = board.san(sf_top_move)
+        except Exception:
+            sf_top_san = sf_top_move.uci()
+        try:
+            sf_top_reply_san = (next_board.san(sf_top_reply)
+                                 if sf_top_reply else None)
+        except Exception:
+            sf_top_reply_san = sf_top_reply.uci() if sf_top_reply else None
+        ev = (1.0 - p_top) * gap - eval_cost
+        qualifying.append({
+            "uci": move.uci(),
+            "san": san,
+            "sf_top_san": sf_top_san,
+            "sf_top_reply_san": sf_top_reply_san,
+            "eval_cost": round(eval_cost, 3),
+            "gap": round(gap, 3),
+            "p_maia_top": round(p_top, 4),
+            "ev": round(ev, 3),
+        })
+
+    if not qualifying:
+        return None
+    qualifying.sort(key=lambda x: abs(x["p_maia_top"] - 0.5))
+    return {"trap": qualifying[0], "all_qualifying": qualifying}
+
+
 class NettlesomeBot:
     """Plays the move that maximizes opponent difficulty.
 
@@ -913,13 +998,18 @@ class EquilibriumMaintainerBot:
                 eval_for_us = self._eval_move_for_us(board, move, sign)
                 pool[move.uci()] = (move, eval_for_us)
 
-        # Pick candidate whose eval is closest to target.
-        best_move, best_dist = None, float("inf")
-        for move, eval_for_us in pool.values():
-            dist = abs(eval_for_us - self.target_eval)
-            if dist < best_dist:
-                best_dist = dist
-                best_move = move
+        # Pick the candidate closest to target FROM BELOW (eval <= target).
+        # Rationale: overshooting target (eval > target) hoards advantage
+        # we can't give back without playing visibly bad moves later. Under-
+        # shooting (eval < target) is recoverable -- a future move can be
+        # closer to optimal and naturally drift back up toward target.
+        # If no candidate is at-or-below target, fall back to the smallest
+        # above target.
+        below = [(m, ev) for m, ev in pool.values() if ev <= self.target_eval]
+        if below:
+            best_move, _ = max(below, key=lambda x: x[1])
+        else:
+            best_move, _ = min(pool.values(), key=lambda x: x[1])
         return best_move
 
     def quit(self):

@@ -24,7 +24,11 @@ import chess
 import chess.engine
 from flask import Flask, request, jsonify, render_template_string
 
-from engine import STOCKFISH_PATH, MAIA_WEIGHTS_PATH, MaiaBot, get_top_moves
+from engine import (
+    STOCKFISH_PATH, MAIA_WEIGHTS_PATH,
+    MaiaBot, get_top_moves, find_puzzle_trap,
+)
+from maia_policy import MaiaPolicyEngine
 
 app = Flask(__name__)
 
@@ -46,6 +50,9 @@ def init_engines(depth=10):
     state["sf"].configure({"Threads": 2, "Hash": 256})
     state["maia"] = MaiaBot(MAIA_WEIGHTS_PATH,
                             rating=1900, temperature=1.0, seed=None)
+    # Separate MaiaPolicyEngine for the trap-finder (uses predict_policy,
+    # different API than MaiaBot.choose_move).
+    state["maia_oracle"] = MaiaPolicyEngine(MAIA_WEIGHTS_PATH, rating=1900)
     state["depth"] = depth
 
 
@@ -87,6 +94,7 @@ def serialize_state():
     cur_eval = eval_white(board) * sign
 
     candidates = []
+    trap_info = None
     if (board.turn == user_color
             and not board.is_game_over()):
         raw = get_top_moves(state["sf"], board, num_moves=25,
@@ -103,6 +111,14 @@ def serialize_state():
                 "eval": round(eval_for_us, 2),
                 "drift": round(eval_for_us - state["target"], 2),
             })
+        # Look for an available puzzle trap (Stonefish's actual trap logic).
+        try:
+            trap_info = find_puzzle_trap(
+                state["sf"], state["maia_oracle"], board,
+                depth=state["depth"],
+            )
+        except Exception:
+            trap_info = None
 
     return {
         "fen": board.fen(),
@@ -115,6 +131,7 @@ def serialize_state():
         "result": board.result() if board.is_game_over() else None,
         "history": state["history"],
         "candidates": candidates,
+        "trap": trap_info,
         "ply": board.ply(),
         "move_number": board.fullmove_number,
     }
@@ -260,6 +277,16 @@ HTML_PAGE = """
   .cand .drift { min-width: 60px; text-align: right; font-family: monospace; }
   .cand.maintainer-pick { background: #2c4a2c; }
   .cand.maintainer-pick:hover { background: #355c35; }
+  .cand.trap-pick { background: #5a3a1a; border-left: 4px solid #ffaa00; }
+  .cand.trap-pick:hover { background: #6b4523; }
+  .cand.trap-pick.maintainer-pick { background: #4a4520; }
+  .trap-panel {
+    background: #3a2c14; border: 1px solid #6b4523; padding: 12px;
+    border-radius: 6px; margin: 12px 0; font-size: 13px;
+  }
+  .trap-panel .label { color: #ffaa00; font-weight: bold; }
+  .trap-panel .row { margin: 4px 0; }
+  .trap-panel .small { font-size: 11px; color: #aaa; }
   #history {
     max-height: 200px; overflow-y: auto; padding: 8px;
     background: #2a2a2a; border-radius: 6px; font-family: monospace;
@@ -309,9 +336,23 @@ HTML_PAGE = """
     </div>
   </div>
 
+  <div id="trap-panel" class="trap-panel" style="display:none;">
+    <div class="row"><span class="label">PUZZLE MOMENT AVAILABLE</span></div>
+    <div id="trap-detail" class="row"></div>
+    <div class="row"><button id="play-trap-btn">Play the trap</button></div>
+    <div class="small">
+      The trap qualifies under Stonefish's filter (eval_cost
+      &ge; 0.2p, gap &ge; 0.5p, gap/cost &ge; 1.5, P_maia &isin; [0.2, 0.8]).
+      Sacrifices a little eval for a position only a precise reply holds.
+    </div>
+  </div>
+
   <h3 style="margin: 16px 0 8px; font-size: 14px; color: #aaa;">
     SF top-25 candidates (click to play)
-    <span style="font-size:11px; color:#666;">— green = maintainer pick</span>
+    <span style="font-size:11px; color:#666;">
+      — green = maintainer pick (closest from below target)
+      — orange = trap move
+    </span>
   </h3>
   <div id="candidates"></div>
 
@@ -372,23 +413,51 @@ function render() {
     gameoverRow.style.display = 'none';
   }
 
+  // Trap panel
+  const trapPanel = document.getElementById('trap-panel');
+  const trapDetail = document.getElementById('trap-detail');
+  let trapUci = null;
+  if (cur_state.trap && cur_state.trap.trap) {
+    const t = cur_state.trap.trap;
+    trapUci = t.uci;
+    trapPanel.style.display = '';
+    trapDetail.innerHTML =
+      '<b>' + t.san + '</b> instead of <b>' + t.sf_top_san + '</b>' +
+      ' (SF top). Sacrifice ' + t.eval_cost.toFixed(2) + 'p.' +
+      ' If opp finds <b>' + (t.sf_top_reply_san || '?') + '</b>, they hold' +
+      ' (gap ' + t.gap.toFixed(2) + 'p, P_maia=' + (t.p_maia_top*100).toFixed(0) + '%).';
+    document.getElementById('play-trap-btn').onclick = () => playMove(trapUci);
+  } else {
+    trapPanel.style.display = 'none';
+  }
+
   // Candidates
   candidatesEl.innerHTML = '';
   if (cur_state.candidates.length === 0) {
     candidatesEl.innerHTML = '<div style="padding:8px;color:#666;">(opponent to move)</div>';
   } else {
-    // Identify maintainer's pick (smallest |drift|)
-    let bestIdx = 0;
-    let bestDrift = Math.abs(cur_state.candidates[0].drift);
+    // Maintainer's pick: closest to target FROM BELOW (drift <= 0).
+    // Fall back to smallest positive drift if no candidate is at/below target.
+    let bestIdx = -1;
+    let bestBelowDrift = -Infinity;   // looking for max drift among drift <= 0
+    let bestAboveIdx = 0;             // fallback: min drift among drift > 0
+    let bestAboveDrift = Infinity;
     cur_state.candidates.forEach((c, i) => {
-      if (Math.abs(c.drift) < bestDrift) {
-        bestDrift = Math.abs(c.drift);
-        bestIdx = i;
+      if (c.drift <= 0) {
+        if (c.drift > bestBelowDrift) { bestBelowDrift = c.drift; bestIdx = i; }
+      } else {
+        if (c.drift < bestAboveDrift) { bestAboveDrift = c.drift; bestAboveIdx = i; }
       }
     });
+    if (bestIdx < 0) bestIdx = bestAboveIdx;
     cur_state.candidates.forEach((c, i) => {
+      const isTrap = (c.uci === trapUci);
+      const isMaintainer = (i === bestIdx);
+      let cls = 'cand';
+      if (isMaintainer) cls += ' maintainer-pick';
+      if (isTrap) cls += ' trap-pick';
       const div = document.createElement('div');
-      div.className = 'cand' + (i === bestIdx ? ' maintainer-pick' : '');
+      div.className = cls;
       div.innerHTML =
         '<span class="idx">' + (i+1) + '</span>' +
         '<span class="san">' + c.san + '</span>' +
