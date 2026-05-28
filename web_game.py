@@ -42,6 +42,14 @@ state = {
     "sf": None,
     "maia": None,
     "depth": 10,     # SF analysis depth -- set in init_engines() from CLI
+    # Last trap-resolution event, used by the UI for notifications and
+    # to auto-update the target. Set after Maia replies to a user move
+    # that qualified as a trap. Has shape:
+    # {"ply", "found": bool, "trap_san", "expected_reply_san",
+    #  "actual_reply_san", "old_target", "new_target",
+    #  "eval_cost", "gap", "p_maia"}
+    "last_trap_event": None,
+    "event_seq": 0,  # monotonic counter so UI can detect new events
 }
 
 
@@ -132,6 +140,7 @@ def serialize_state():
         "history": state["history"],
         "candidates": candidates,
         "trap": trap_info,
+        "last_trap_event": state["last_trap_event"],
         "ply": board.ply(),
         "move_number": board.fullmove_number,
     }
@@ -173,6 +182,20 @@ def api_move():
             san = board.san(move)
         except Exception:
             san = move.uci()
+        # Check whether THIS move qualifies as a trap, BEFORE we push it.
+        # Used after Maia replies to decide whether to fire a trap-resolution
+        # notification and auto-update target.
+        pending_trap = None
+        try:
+            tinfo = find_puzzle_trap(state["sf"], state["maia_oracle"], board,
+                                      depth=state["depth"])
+        except Exception:
+            tinfo = None
+        if tinfo:
+            for q in tinfo["all_qualifying"]:
+                if q["uci"] == move.uci():
+                    pending_trap = q
+                    break
         board.push(move)
         sign = 1.0 if state["user_color"] == chess.WHITE else -1.0
         post = eval_white(board) * sign
@@ -184,6 +207,30 @@ def api_move():
         # Maia replies if game still on
         if not board.is_game_over():
             maia_plays()
+            # If the user move was a trap, resolve it now (Maia just replied):
+            # check whether Maia played the SF top reply, fire event, update target.
+            if pending_trap is not None:
+                reply = state["history"][-1]
+                actual_uci = reply.get("uci")
+                found = (actual_uci == pending_trap.get("sf_top_reply_uci"))
+                # Post-resolution eval becomes the new target.
+                new_target = eval_white(board) * sign
+                new_target = max(-10.0, min(10.0, new_target))
+                state["event_seq"] += 1
+                state["last_trap_event"] = {
+                    "id": state["event_seq"],
+                    "ply": board.ply(),
+                    "found": found,
+                    "trap_san": pending_trap["san"],
+                    "expected_reply_san": pending_trap["sf_top_reply_san"],
+                    "actual_reply_san": reply.get("san"),
+                    "old_target": round(state["target"], 2),
+                    "new_target": round(new_target, 2),
+                    "eval_cost": pending_trap["eval_cost"],
+                    "gap": pending_trap["gap"],
+                    "p_maia": pending_trap["p_maia_top"],
+                }
+                state["target"] = new_target
         return jsonify(serialize_state())
 
 
@@ -207,6 +254,7 @@ def api_reset():
         state["board"] = chess.Board()
         state["history"] = []
         state["target"] = 0.0
+        state["last_trap_event"] = None
         state["user_color"] = (chess.WHITE if color == "w" else chess.BLACK)
         if state["user_color"] == chess.BLACK:
             maia_plays()
@@ -287,6 +335,20 @@ HTML_PAGE = """
   .trap-panel .label { color: #ffaa00; font-weight: bold; }
   .trap-panel .row { margin: 4px 0; }
   .trap-panel .small { font-size: 11px; color: #aaa; }
+  .notification {
+    position: fixed; top: 16px; right: 16px;
+    background: #2a2a2a; border-left: 4px solid #ffaa00;
+    padding: 12px 16px; border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    max-width: 360px; font-size: 13px;
+    transition: opacity 0.3s ease;
+    z-index: 100;
+  }
+  .notification.found { border-left-color: #e36a6a; }
+  .notification.missed { border-left-color: #6bd968; }
+  .notification .title { font-weight: bold; margin-bottom: 4px; }
+  .notification .body { color: #ccc; line-height: 1.4; }
+  .notification.hiding { opacity: 0; }
   #history {
     max-height: 200px; overflow-y: auto; padding: 8px;
     background: #2a2a2a; border-radius: 6px; font-family: monospace;
@@ -365,6 +427,7 @@ HTML_PAGE = """
 <script>
 let board = null;
 let cur_state = null;
+let lastSeenTrapEventId = 0;
 
 const evalEl = document.getElementById('eval');
 const driftEl = document.getElementById('drift');
@@ -388,8 +451,49 @@ function evalClass(v) {
   return 'neutral';
 }
 
+function showNotification(html, kind) {
+  const n = document.createElement('div');
+  n.className = 'notification ' + (kind || '');
+  n.innerHTML = html;
+  document.body.appendChild(n);
+  // Auto-dismiss after 8s
+  setTimeout(() => {
+    n.classList.add('hiding');
+    setTimeout(() => n.remove(), 400);
+  }, 8000);
+  // Click to dismiss
+  n.onclick = () => {
+    n.classList.add('hiding');
+    setTimeout(() => n.remove(), 400);
+  };
+}
+
+function checkTrapEvent(state) {
+  const ev = state.last_trap_event;
+  if (!ev) return;
+  if (ev.id <= lastSeenTrapEventId) return;
+  lastSeenTrapEventId = ev.id;
+  const title = ev.found
+    ? "Maia found the trap"
+    : "Maia missed the trap";
+  const detail = ev.found
+    ? "She played " + ev.actual_reply_san + " (the precise reply)."
+    : "Expected " + (ev.expected_reply_san || "?") +
+      "; she played " + ev.actual_reply_san + ".";
+  const tgt = "Target updated: " + fmtEval(ev.old_target) + " &rarr; <b>" +
+              fmtEval(ev.new_target) + "</b>";
+  showNotification(
+    '<div class="title">' + title + '</div>' +
+    '<div class="body">' + ev.trap_san + ' &middot; ' + detail + '<br>' +
+    tgt + '</div>',
+    ev.found ? 'found' : 'missed'
+  );
+}
+
 function render() {
   if (!cur_state) return;
+  // Fire trap notification first (so the target update animates right after)
+  checkTrapEvent(cur_state);
   // Board
   board.position(cur_state.fen, false);
   if (cur_state.user_color === 'b') {
