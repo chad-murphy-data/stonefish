@@ -26,7 +26,7 @@ from flask import Flask, request, jsonify, render_template_string
 
 from engine import (
     STOCKFISH_PATH, MAIA_WEIGHTS_PATH,
-    MaiaBot, get_top_moves, find_puzzle_trap,
+    MaiaBot, get_top_moves, find_puzzle_trap, apply_maintainer_rules,
 )
 from maia_policy import MaiaPolicyEngine
 
@@ -103,10 +103,13 @@ def serialize_state():
 
     candidates = []
     trap_info = None
+    maintainer_pick_uci = None
+    maintainer_reason = None
     if (board.turn == user_color
             and not board.is_game_over()):
         raw = get_top_moves(state["sf"], board, num_moves=25,
                             depth=state["depth"])
+        cand_tuples = []
         for move, eval_cp in raw:
             eval_for_us = max(-10.0, min(10.0, eval_cp * sign))
             try:
@@ -119,6 +122,23 @@ def serialize_state():
                 "eval": round(eval_for_us, 2),
                 "drift": round(eval_for_us - state["target"], 2),
             })
+            cand_tuples.append((move, eval_for_us))
+        # Detect forced mate from our POV (rule 2)
+        mate_dist = None
+        try:
+            info = state["sf"].analyse(board,
+                                        chess.engine.Limit(depth=state["depth"]))
+            sc = info["score"].pov(board.turn)
+            if sc.is_mate():
+                mate_dist = sc.mate()
+        except Exception:
+            pass
+        # Apply the maintainer's decision rules to pick the recommended move
+        chosen, maintainer_reason = apply_maintainer_rules(
+            cand_tuples, state["target"], mate_distance=mate_dist,
+        )
+        if chosen is not None:
+            maintainer_pick_uci = chosen.uci()
         # Look for an available puzzle trap (Stonefish's actual trap logic).
         try:
             trap_info = find_puzzle_trap(
@@ -140,6 +160,8 @@ def serialize_state():
         "history": state["history"],
         "candidates": candidates,
         "trap": trap_info,
+        "maintainer_pick_uci": maintainer_pick_uci,
+        "maintainer_reason": maintainer_reason,
         "last_trap_event": state["last_trap_event"],
         "ply": board.ply(),
         "move_number": board.fullmove_number,
@@ -540,33 +562,33 @@ function render() {
   if (cur_state.candidates.length === 0) {
     candidatesEl.innerHTML = '<div style="padding:8px;color:#666;">(opponent to move)</div>';
   } else {
-    // Maintainer's pick: closest to target FROM BELOW (drift <= 0).
-    // Fall back to smallest positive drift if no candidate is at/below target.
-    let bestIdx = -1;
-    let bestBelowDrift = -Infinity;   // looking for max drift among drift <= 0
-    let bestAboveIdx = 0;             // fallback: min drift among drift > 0
-    let bestAboveDrift = Infinity;
-    cur_state.candidates.forEach((c, i) => {
-      if (c.drift <= 0) {
-        if (c.drift > bestBelowDrift) { bestBelowDrift = c.drift; bestIdx = i; }
-      } else {
-        if (c.drift < bestAboveDrift) { bestAboveDrift = c.drift; bestAboveIdx = i; }
-      }
-    });
-    if (bestIdx < 0) bestIdx = bestAboveIdx;
+    // Maintainer pick comes from the server (apply_maintainer_rules)
+    const pickUci = cur_state.maintainer_pick_uci;
+    const reason = cur_state.maintainer_reason;
+    const reasonLabel = {
+      'few-moves': 'forced (<3 legal moves)',
+      'mate': 'mate available',
+      'below-target': 'below target',
+      'above-target-no-below': 'no below-target option',
+      'above-target-drop-too-big': 'best-below too far from target',
+    }[reason] || reason;
     cur_state.candidates.forEach((c, i) => {
       const isTrap = (c.uci === trapUci);
-      const isMaintainer = (i === bestIdx);
+      const isMaintainer = (c.uci === pickUci);
       let cls = 'cand';
       if (isMaintainer) cls += ' maintainer-pick';
       if (isTrap) cls += ' trap-pick';
       const div = document.createElement('div');
       div.className = cls;
+      const reasonBadge = isMaintainer && reasonLabel
+        ? '<span style="color:#888;font-size:11px;font-style:italic;margin-left:8px;">— ' + reasonLabel + '</span>'
+        : '';
       div.innerHTML =
         '<span class="idx">' + (i+1) + '</span>' +
         '<span class="san">' + c.san + '</span>' +
         '<span class="eval ' + evalClass(c.eval) + '">' + fmtEval(c.eval) + '</span>' +
-        '<span class="drift ' + evalClass(c.drift) + '">' + fmtEval(c.drift) + '</span>';
+        '<span class="drift ' + evalClass(c.drift) + '">' + fmtEval(c.drift) + '</span>' +
+        reasonBadge;
       div.onclick = () => playMove(c.uci);
       candidatesEl.appendChild(div);
     });

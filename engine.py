@@ -273,6 +273,57 @@ def score_candidate_move(engine, board, candidate_move, num_responses=3, depth=1
     )
 
 
+def apply_maintainer_rules(candidates_with_evals, target_eval,
+                            mate_distance=None,
+                            max_drop_below=1.0,
+                            mate_in_override=4,
+                            min_legal_moves=3):
+    """Pure decision function for the EquilibriumMaintainer.
+
+    Inputs:
+      candidates_with_evals: list of (chess.Move, eval_for_us in pawns)
+      target_eval: target eval in pawns from our POV
+      mate_distance: SF's mate-distance from our POV (positive = we mate in N,
+                     None or non-positive = no usable mate)
+
+    Tunables:
+      max_drop_below: max pawns we'll go below target (if best-below is more
+        than this far below, fall through to best-above instead)
+      mate_in_override: play SF top if mate in <= this many moves
+      min_legal_moves: if total legal moves below this, just play SF top
+        (covers "in check with one escape", only-moves, etc.)
+
+    Returns: (chosen_move, reason) where reason ∈
+      {"empty", "few-moves", "mate", "below-target",
+       "above-target-no-below", "above-target-drop-too-big"}
+    """
+    if not candidates_with_evals:
+        return None, "empty"
+
+    # Rule 3: too few options -- just play best
+    if len(candidates_with_evals) < min_legal_moves:
+        return candidates_with_evals[0][0], "few-moves"
+
+    # Rule 2: forced mate within threshold -- take it
+    if mate_distance is not None and 0 < mate_distance <= mate_in_override:
+        return candidates_with_evals[0][0], "mate"
+
+    # Rule 1: prefer below-target, but cap how far below we'll go
+    below = [(m, ev) for m, ev in candidates_with_evals if ev <= target_eval]
+    if below:
+        best_below = max(below, key=lambda x: x[1])
+        drop = target_eval - best_below[1]
+        if drop <= max_drop_below:
+            return best_below[0], "below-target"
+        # Best-below is too far below target -- fall through to above-target
+        reason = "above-target-drop-too-big"
+    else:
+        reason = "above-target-no-below"
+
+    best_above = min(candidates_with_evals, key=lambda x: x[1])
+    return best_above[0], reason
+
+
 def find_puzzle_trap(sf, maia_oracle, board, depth=10, num_candidates=7,
                      num_responses=3, max_eval_cost=1.5,
                      min_eval_cost=0.20, min_gap=0.50, min_gap_ratio=1.5,
@@ -939,13 +990,21 @@ class EquilibriumMaintainerBot:
 
     def __init__(self, sf_engine, maia_oracle=None, depth=10,
                  num_sf_candidates=15, num_maia_candidates=10,
-                 initial_target=0.0):
+                 initial_target=0.0,
+                 # Maintainer decision-rule tunables (apply_maintainer_rules):
+                 max_drop_below=1.0,
+                 mate_in_override=4,
+                 min_legal_moves=3):
         self.sf = sf_engine
         self.maia_oracle = maia_oracle
         self.depth = depth
         self.num_sf_candidates = num_sf_candidates
         self.num_maia_candidates = num_maia_candidates
         self.target_eval = initial_target
+        self.max_drop_below = max_drop_below
+        self.mate_in_override = mate_in_override
+        self.min_legal_moves = min_legal_moves
+        self.last_reason = None  # for diagnostics
 
     def set_equilibrium(self, eval_for_us: float):
         """Update the target eval. Called by NettlesomeBot after trap events."""
@@ -999,19 +1058,27 @@ class EquilibriumMaintainerBot:
                 eval_for_us = self._eval_move_for_us(board, move, sign)
                 pool[move.uci()] = (move, eval_for_us)
 
-        # Pick the candidate closest to target FROM BELOW (eval <= target).
-        # Rationale: overshooting target (eval > target) hoards advantage
-        # we can't give back without playing visibly bad moves later. Under-
-        # shooting (eval < target) is recoverable -- a future move can be
-        # closer to optimal and naturally drift back up toward target.
-        # If no candidate is at-or-below target, fall back to the smallest
-        # above target.
-        below = [(m, ev) for m, ev in pool.values() if ev <= self.target_eval]
-        if below:
-            best_move, _ = max(below, key=lambda x: x[1])
-        else:
-            best_move, _ = min(pool.values(), key=lambda x: x[1])
-        return best_move
+        # Get SF's mate distance (from our POV) so the maintainer can take
+        # forced mates rather than mechanically picking target-hitters.
+        mate_distance = None
+        try:
+            info = self.sf.analyse(board, chess.engine.Limit(depth=self.depth))
+            score = info["score"].pov(board.turn)
+            if score.is_mate():
+                mate_distance = score.mate()
+        except Exception:
+            pass
+
+        pool_list = list(pool.values())
+        chosen, reason = apply_maintainer_rules(
+            pool_list, self.target_eval,
+            mate_distance=mate_distance,
+            max_drop_below=self.max_drop_below,
+            mate_in_override=self.mate_in_override,
+            min_legal_moves=self.min_legal_moves,
+        )
+        self.last_reason = reason
+        return chosen if chosen is not None else pool_list[0][0]
 
     def quit(self):
         pass
