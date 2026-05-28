@@ -37,24 +37,26 @@ state = {
     "user_color": chess.WHITE,
     "sf": None,
     "maia": None,
+    "depth": 10,     # SF analysis depth -- set in init_engines() from CLI
 }
 
 
-def init_engines():
+def init_engines(depth=10):
     state["sf"] = chess.engine.SimpleEngine.popen_uci(STOCKFISH_PATH)
     state["sf"].configure({"Threads": 2, "Hash": 256})
     state["maia"] = MaiaBot(MAIA_WEIGHTS_PATH,
                             rating=1900, temperature=1.0, seed=None)
+    state["depth"] = depth
 
 
-def eval_white(board, depth=10):
+def eval_white(board):
     """Eval in pawns from white's perspective."""
     if board.is_game_over():
         res = board.result()
         if res == "1-0": return 99.99
         if res == "0-1": return -99.99
         return 0.0
-    info = state["sf"].analyse(board, chess.engine.Limit(depth=depth))
+    info = state["sf"].analyse(board, chess.engine.Limit(depth=state["depth"]))
     s = info["score"].white()
     if s.is_mate():
         return 99.99 if s.mate() > 0 else -99.99
@@ -87,7 +89,8 @@ def serialize_state():
     candidates = []
     if (board.turn == user_color
             and not board.is_game_over()):
-        raw = get_top_moves(state["sf"], board, num_moves=25, depth=10)
+        raw = get_top_moves(state["sf"], board, num_moves=25,
+                            depth=state["depth"])
         for move, eval_cp in raw:
             eval_for_us = max(-10.0, min(10.0, eval_cp * sign))
             try:
@@ -516,7 +519,12 @@ fetchState();
 
 if __name__ == "__main__":
     import sys
-    init_engines()
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 5000
-    print(f"Starting Stonefish web UI on http://localhost:{port}")
+    depth = int(sys.argv[2]) if len(sys.argv) > 2 else 10
+    init_engines(depth=depth)
+    print(f"Starting Stonefish web UI on http://localhost:{port} (depth={depth})")
+    if depth < 12:
+        print(f"  note: depth={depth} can show inaccurate evals on tactical "
+              f"positions (multipv search non-determinism). Bump to 14-16 for "
+              f"more reliable evals -- slower per move, especially for 25 candidates.")
     app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)
