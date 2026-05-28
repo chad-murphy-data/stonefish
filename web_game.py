@@ -12,10 +12,10 @@ Usage:
     # then open http://localhost:5000 in your browser
 
 Requires:
-    pip install flask
-    + Stockfish at /usr/games/stockfish (or STOCKFISH_PATH env)
-    + lc0 at /usr/local/bin/lc0
-    + Maia 1900 weights at /home/user/.maia/maia-1900.pb.gz
+    pip install flask python-chess
+    + Stockfish on PATH (or STOCKFISH_PATH env)
+    + lc0 on PATH (or LC0_PATH env)
+    + Maia 1900 weights at ~/.maia/maia-1900.pb.gz (or MAIA_WEIGHTS env)
 """
 
 import threading
@@ -24,7 +24,7 @@ import chess
 import chess.engine
 from flask import Flask, request, jsonify, render_template_string
 
-from engine import STOCKFISH_PATH, MaiaBot, get_top_moves
+from engine import STOCKFISH_PATH, MAIA_WEIGHTS_PATH, MaiaBot, get_top_moves
 
 app = Flask(__name__)
 
@@ -43,7 +43,7 @@ state = {
 def init_engines():
     state["sf"] = chess.engine.SimpleEngine.popen_uci(STOCKFISH_PATH)
     state["sf"].configure({"Threads": 2, "Hash": 256})
-    state["maia"] = MaiaBot("/home/user/.maia/maia-1900.pb.gz",
+    state["maia"] = MaiaBot(MAIA_WEIGHTS_PATH,
                             rating=1900, temperature=1.0, seed=None)
 
 

@@ -26,7 +26,7 @@ import sys
 import chess
 import chess.engine
 
-from engine import STOCKFISH_PATH, MaiaBot, get_top_moves
+from engine import STOCKFISH_PATH, MAIA_WEIGHTS_PATH, MaiaBot, get_top_moves
 
 
 def eval_position(sf, board, depth=10):
@@ -109,7 +109,7 @@ def main():
 
     sf = chess.engine.SimpleEngine.popen_uci(STOCKFISH_PATH)
     sf.configure({"Threads": 2, "Hash": 256})
-    maia = MaiaBot("/home/user/.maia/maia-1900.pb.gz",
+    maia = MaiaBot(MAIA_WEIGHTS_PATH,
                    rating=1900, temperature=1.0, seed=None)
 
     board = chess.Board()

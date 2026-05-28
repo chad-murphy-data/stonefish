@@ -32,8 +32,9 @@ def _find_stockfish():
     # Common locations
     candidates = [
         r"C:\Users\chadm\AppData\Local\Microsoft\WinGet\Packages\Stockfish.Stockfish_Microsoft.Winget.Source_8wekyb3d8bbwe\stockfish\stockfish-windows-x86-64-avx2.exe",
-        "/usr/games/stockfish",
-        "/usr/local/bin/stockfish",
+        "/opt/homebrew/bin/stockfish",   # macOS Apple Silicon (brew)
+        "/usr/local/bin/stockfish",       # macOS Intel (brew) + Linux
+        "/usr/games/stockfish",           # Debian/Ubuntu apt
         "/usr/bin/stockfish",
     ]
     for path in candidates:
@@ -46,7 +47,45 @@ def _find_stockfish():
     # Fall back to the first candidate (will error on open)
     return candidates[0]
 
+
+def _find_lc0():
+    """Find the lc0 binary, checking common locations."""
+    env_path = os.environ.get("LC0_PATH")
+    if env_path and os.path.isfile(env_path):
+        return env_path
+    candidates = [
+        "/opt/homebrew/bin/lc0",   # macOS Apple Silicon (brew)
+        "/usr/local/bin/lc0",       # macOS Intel (brew) + built-from-source on Linux
+        "/usr/bin/lc0",
+    ]
+    for path in candidates:
+        if os.path.isfile(path):
+            return path
+    found = shutil.which("lc0")
+    if found:
+        return found
+    return "lc0"  # rely on PATH
+
+
+def _find_maia_weights():
+    """Find the Maia 1900 weights file, checking common locations."""
+    env_path = os.environ.get("MAIA_WEIGHTS")
+    if env_path and os.path.isfile(env_path):
+        return env_path
+    candidates = [
+        os.path.expanduser("~/.maia/maia-1900.pb.gz"),  # portable: user home
+        "/home/user/.maia/maia-1900.pb.gz",              # original container path
+    ]
+    for path in candidates:
+        if os.path.isfile(path):
+            return path
+    # Fall back to the home-dir path (will error if missing)
+    return candidates[0]
+
+
 STOCKFISH_PATH = _find_stockfish()
+LC0_PATH = _find_lc0()
+MAIA_WEIGHTS_PATH = _find_maia_weights()
 
 
 @dataclass
@@ -681,8 +720,10 @@ class MaiaBot:
         <= 0          -- always pick the argmax (legacy behavior)
     """
 
-    def __init__(self, weights_path, rating=1900, lc0_path="lc0",
+    def __init__(self, weights_path, rating=1900, lc0_path=None,
                  backend="eigen", threads=1, temperature=1.0, seed=None):
+        if lc0_path is None:
+            lc0_path = LC0_PATH
         from maia_policy import MaiaPolicyEngine
         import random as _random
         self.weights_path = weights_path
