@@ -1,0 +1,53 @@
+Stonefish QA: N=10, depth=12
+vs Maia 1900 (stochastic, T=1)
+======================================================================
+  G 1/10 (W): W  131mv  moments= 1  found= 0/1   find_rate=   0%  44.6s
+  G 2/10 (B): D  109mv  moments= 2  found= 1/2   find_rate=  50%  32.8s
+  G 3/10 (W): W   43mv  moments= 2  found= 1/2   find_rate=  50%  25.1s
+  G 4/10 (B): W   34mv  moments= 4  found= 2/4   find_rate=  50%  13.1s
+  G 5/10 (W): W   27mv  moments= 1  found= 1/1   find_rate= 100%  16.2s
+  G 6/10 (B): D  179mv  moments= 0  found= 0/0   find_rate=  n/a  53.8s
+  G 7/10 (W): W   75mv  moments= 1  found= 0/1   find_rate=   0%  49.6s
+  G 8/10 (B): D  180mv  moments= 3  found= 1/3   find_rate=  33%  47.8s
+  G 9/10 (W): W   51mv  moments= 2  found= 2/2   find_rate= 100%  26.0s
+  G10/10 (B): D  103mv  moments= 0  found= 0/0   find_rate=  n/a  36.6s
+
+======================================================================
+RESULTS  (10 games)
+======================================================================
+  Stonefish: 6W / 4D / 0L  (score 80.0%)
+
+  RULE 1 -- ~4-6 traps/game
+    mean moments/game:        1.6  (target [4, 6])
+    games with >=3 moments:   2/10 (20%)  (target >=80%)
+    FAIL
+
+  RULE 2 -- when opp finds >60%, opp wins or draws
+    games matching:           2/10
+    opp avg score:            0.0%  (target >=70%)
+    FAIL
+
+  RULE 3 -- when opp finds <40%, opp loses or draws
+    games matching:           3/10
+    Stonefish avg score:      83.3%  (target >=70%)
+    PASS
+
+  RULE 4 -- find_rate predicts outcome
+    Pearson r:                -0.10  (target >=+0.50)
+    n:                        8 games with at least one moment
+    FAIL
+
+  Score by find-rate bin (opp's POV):
+    find rate         n   opp score
+    --------------------------------
+    [  0%,  20%)      2         0.0%
+    [ 20%,  40%)      1        50.0%
+    [ 40%,  60%)      3        16.7%
+    [ 60%,  80%)      0   --
+    [ 80%, 101%)      2         0.0%
+    no moments          2        50.0%
+
+  Rules passed: 1/4
+  Calibration is OFF on 3 rule(s)
+
+  Data: results/qa_v1_n10_d12.json
