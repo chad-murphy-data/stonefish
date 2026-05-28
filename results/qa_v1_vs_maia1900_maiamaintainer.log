@@ -1,0 +1,73 @@
+Stonefish QA: N=30, depth=10
+vs Maia 1900 (stochastic, T=1)
+======================================================================
+  G 1/30 (W): W   83mv  moments= 2  found= 2/2   find_rate= 100%  22.5s
+  G 2/30 (B): W   62mv  moments= 5  found= 0/5   find_rate=   0%  10.2s
+  G 3/30 (W): W   63mv  moments= 3  found= 1/3   find_rate=  33%  11.7s
+  G 4/30 (B): W   64mv  moments= 3  found= 2/3   find_rate=  67%  15.2s
+  G 5/30 (W): W   77mv  moments= 3  found= 1/3   find_rate=  33%  14.3s
+  G 6/30 (B): W   56mv  moments= 3  found= 1/3   find_rate=  33%  12.8s
+  G 7/30 (W): W   71mv  moments= 1  found= 0/1   find_rate=   0%  18.2s
+  G 8/30 (B): W   84mv  moments= 3  found= 1/3   find_rate=  33%  21.2s
+  G 9/30 (W): W  103mv  moments= 3  found= 1/3   find_rate=  33%  10.7s
+  G10/30 (B): W   70mv  moments= 2  found= 1/2   find_rate=  50%  16.8s
+  G11/30 (W): W   61mv  moments= 3  found= 1/3   find_rate=  33%  13.2s
+  G12/30 (B): W   72mv  moments= 1  found= 0/1   find_rate=   0%  14.9s
+  G13/30 (W): W   59mv  moments= 2  found= 2/2   find_rate= 100%  16.4s
+  G14/30 (B): W   76mv  moments= 2  found= 2/2   find_rate= 100%  13.2s
+  G15/30 (W): W   75mv  moments= 4  found= 0/4   find_rate=   0%  9.9s
+  G16/30 (B): W   62mv  moments= 3  found= 3/3   find_rate= 100%  12.8s
+  G17/30 (W): W   71mv  moments= 2  found= 0/2   find_rate=   0%  12.7s
+  G18/30 (B): W   74mv  moments= 4  found= 3/4   find_rate=  75%  12.7s
+  G19/30 (W): W   81mv  moments= 2  found= 0/2   find_rate=   0%  13.1s
+  G20/30 (B): W   50mv  moments= 3  found= 1/3   find_rate=  33%  10.4s
+  G21/30 (W): W  119mv  moments= 3  found= 1/3   find_rate=  33%  19.1s
+  G22/30 (B): D  111mv  moments= 0  found= 0/0   find_rate=  n/a  16.6s
+  G23/30 (W): W   69mv  moments= 3  found= 1/3   find_rate=  33%  12.5s
+  G24/30 (B): W   44mv  moments= 2  found= 1/2   find_rate=  50%  9.6s
+  G25/30 (W): W  113mv  moments= 3  found= 2/3   find_rate=  67%  31.4s
+  G26/30 (B): W   76mv  moments= 2  found= 1/2   find_rate=  50%  14.9s
+  G27/30 (W): W   69mv  moments= 3  found= 1/3   find_rate=  33%  20.9s
+  G28/30 (B): W   72mv  moments= 3  found= 2/3   find_rate=  67%  15.3s
+  G29/30 (W): W   39mv  moments= 2  found= 1/2   find_rate=  50%  9.5s
+  G30/30 (B): W   70mv  moments= 2  found= 1/2   find_rate=  50%  18.3s
+
+======================================================================
+RESULTS  (30 games)
+======================================================================
+  Stonefish: 29W / 1D / 0L  (score 98.3%)
+
+  RULE 1 -- ~4-6 traps/game
+    mean moments/game:        2.6  (target [4, 6])
+    games with >=3 moments:   17/30 (57%)  (target >=80%)
+    FAIL
+
+  RULE 2 -- when opp finds >60%, opp wins or draws
+    games matching:           8/30
+    opp avg score:            0.0%  (target >=70%)
+    FAIL
+
+  RULE 3 -- when opp finds <40%, opp loses or draws
+    games matching:           16/30
+    Stonefish avg score:      100.0%  (target >=70%)
+    PASS
+
+  RULE 4 -- find_rate predicts outcome
+    Pearson r:                +0.00  (target >=+0.50)
+    n:                        29 games with at least one moment
+    FAIL
+
+  Score by find-rate bin (opp's POV):
+    find rate         n   opp score
+    --------------------------------
+    [  0%,  20%)      6         0.0%
+    [ 20%,  40%)     10         0.0%
+    [ 40%,  60%)      5         0.0%
+    [ 60%,  80%)      4         0.0%
+    [ 80%, 101%)      4         0.0%
+    no moments          1        50.0%
+
+  Rules passed: 1/4
+  Calibration is OFF on 3 rule(s)
+
+  Data: results/qa_v1_n30_d10.json
