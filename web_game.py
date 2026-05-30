@@ -27,6 +27,7 @@ from flask import Flask, request, jsonify, render_template_string
 from engine import (
     STOCKFISH_PATH, MAIA_WEIGHTS_PATH,
     MaiaBot, get_top_moves, find_puzzle_trap, apply_maintainer_rules,
+    is_minor_piece_endgame,
 )
 from maia_policy import MaiaPolicyEngine
 
@@ -68,6 +69,14 @@ state = {
     # _refresh_equilibrium_next deferred-refresh on found traps.
     "give_back_remaining": 0,
     "give_back_drop": 0.5,
+    # Cumulative trap counters across the whole game. Drive the endgame
+    # "play well / play badly" decision: in endgame, if Maia found < 50%
+    # of traps the maintainer flips to SF-top-only (precise conversion);
+    # if >= 50%, it plays the normal sub-optimal maintainer (drift).
+    # In endgame, the give-back mechanic is disabled -- target updates
+    # immediately on resolution (per user, don't compound endgame draws).
+    "n_moments": 0,
+    "n_opp_found": 0,
 }
 
 # Snapshots of completed/in-progress games keyed by snapshot_id, for forks.
@@ -140,6 +149,14 @@ def serialize_state():
         effective_target = state["target"]
         if state["give_back_remaining"] > 0:
             effective_target -= state["give_back_drop"]
+        # Endgame mode: when each side has K + <=1 piece + pawns AND we've
+        # seen at least one trap, the maintainer flips between modes
+        # depending on Maia's solve rate.
+        in_endgame = is_minor_piece_endgame(board)
+        solve_rate = (state["n_opp_found"] / state["n_moments"]
+                      if state["n_moments"] > 0 else None)
+        endgame_play_well = (in_endgame and solve_rate is not None
+                              and solve_rate < 0.5)
         raw = get_top_moves(state["sf"], board, num_moves=25,
                             depth=state["depth"])
         cand_tuples = []
@@ -166,10 +183,16 @@ def serialize_state():
                 mate_dist = sc.mate()
         except Exception:
             pass
-        # Apply the maintainer's decision rules to pick the recommended move
-        chosen, maintainer_reason = apply_maintainer_rules(
-            cand_tuples, effective_target, mate_distance=mate_dist,
-        )
+        # Apply the maintainer's decision rules to pick the recommended move.
+        # In endgame with solve_rate < 50%, override: rec = SF #1, the
+        # bot's "convert decisively" mode. Maia didn't earn the hold.
+        if endgame_play_well and cand_tuples:
+            chosen = cand_tuples[0][0]
+            maintainer_reason = "endgame-precise"
+        else:
+            chosen, maintainer_reason = apply_maintainer_rules(
+                cand_tuples, effective_target, mate_distance=mate_dist,
+            )
         if chosen is not None:
             maintainer_pick_uci = chosen.uci()
         # Look for an available puzzle trap (Stonefish's actual trap logic).
@@ -209,6 +232,17 @@ def serialize_state():
         "effective_target": round(effective_target, 2)
             if board.turn == user_color and not board.is_game_over()
             else round(state["target"], 2),
+        "in_endgame": is_minor_piece_endgame(board),
+        "n_moments": state["n_moments"],
+        "n_opp_found": state["n_opp_found"],
+        "solve_rate": (round(state["n_opp_found"] / state["n_moments"], 3)
+                        if state["n_moments"] > 0 else None),
+        "endgame_play_well": (
+            board.turn == user_color and not board.is_game_over()
+            and is_minor_piece_endgame(board)
+            and state["n_moments"] > 0
+            and state["n_opp_found"] / state["n_moments"] < 0.5
+        ),
         "last_trap_event": state["last_trap_event"],
         "ply": board.ply(),
         "move_number": board.fullmove_number,
@@ -299,9 +333,15 @@ def api_move():
                 post_eval = eval_white(board) * sign
                 post_eval = max(-10.0, min(10.0, post_eval))
                 state["event_seq"] += 1
+                # Update cumulative counters (drive endgame-mode decisions).
+                state["n_moments"] += 1
                 if found:
-                    # Give-back: keep target where it was, drop the effective
-                    # target by give_back_drop for the next 5 user moves.
+                    state["n_opp_found"] += 1
+                # In endgame, suppress give-back so the trap doesn't compound
+                # into a long bleed-to-draw. Target updates immediately.
+                in_endgame_now = is_minor_piece_endgame(board)
+                give_back_started = found and not in_endgame_now
+                if give_back_started:
                     state["give_back_remaining"] = 5
                     new_target_for_event = round(state["target"], 2)
                 else:
@@ -319,8 +359,9 @@ def api_move():
                     "eval_cost": pending_trap["eval_cost"],
                     "gap": pending_trap["gap"],
                     "p_maia": pending_trap["p_maia_top"],
-                    "give_back_started": found,
+                    "give_back_started": give_back_started,
                     "give_back_drop": state["give_back_drop"],
+                    "in_endgame": in_endgame_now,
                 }
             elif state["give_back_remaining"] > 0:
                 # Mid give-back, no new trap fired -- decrement the counter.
@@ -363,6 +404,8 @@ def api_reset():
         state["last_trap_event"] = None
         state["trap_cache"] = {}
         state["give_back_remaining"] = 0
+        state["n_moments"] = 0
+        state["n_opp_found"] = 0
         state["user_color"] = (chess.WHITE if color == "w" else chess.BLACK)
         if state["user_color"] == chess.BLACK:
             maia_plays()
@@ -598,6 +641,19 @@ HTML_PAGE = """
     </div>
   </div>
 
+  <div id="endgame-panel" class="trap-panel" style="display:none;
+       background: #1c2c3a; border-color: #4a6b75;">
+    <div class="row"><span class="label" style="color:#7fc7d8;">
+      ENDGAME MODE</span></div>
+    <div id="endgame-detail" class="row"></div>
+    <div class="small">
+      Each side has K + at most 1 piece + pawns. Maintainer rec
+      flips based on Maia's solve rate: &lt;50% &rarr; play SF #1
+      and convert; &ge;50% &rarr; sub-optimal maintainer (let Maia
+      hold). Give-back is suppressed in this phase.
+    </div>
+  </div>
+
   <div id="trap-panel" class="trap-panel" style="display:none;">
     <div class="row"><span class="label">PUZZLE MOMENT AVAILABLE</span></div>
     <div id="trap-detail" class="row"></div>
@@ -754,6 +810,28 @@ function render() {
     gbPanel.style.display = 'none';
   }
 
+  // Endgame panel
+  const egPanel = document.getElementById('endgame-panel');
+  if (cur_state.in_endgame) {
+    egPanel.style.display = '';
+    const sr = cur_state.solve_rate;
+    let modeStr;
+    if (sr === null) {
+      modeStr = '<span style="color:#888;">No traps yet — neutral, normal maintainer.</span>';
+    } else if (cur_state.endgame_play_well) {
+      modeStr = `Solve rate <b>${Math.round(sr*100)}%</b> (<50) &rarr; ` +
+                `<b style="color:#6bd968;">PLAY WELL</b> — rec is SF #1.`;
+    } else {
+      modeStr = `Solve rate <b>${Math.round(sr*100)}%</b> (≥50) &rarr; ` +
+                `<b style="color:#e36a6a;">PLAY BADLY</b> — rec is sub-optimal maintainer.`;
+    }
+    document.getElementById('endgame-detail').innerHTML =
+      modeStr + `<br><span style="color:#888;font-size:11px;">` +
+      `Total traps: ${cur_state.n_moments}, found by Maia: ${cur_state.n_opp_found}</span>`;
+  } else {
+    egPanel.style.display = 'none';
+  }
+
   // Trap panel
   const trapPanel = document.getElementById('trap-panel');
   const trapDetail = document.getElementById('trap-detail');
@@ -785,6 +863,7 @@ function render() {
       'mate': 'mate available',
       'below-target': 'below target',
       'above-target-no-below': 'no below-target option',
+      'endgame-precise': 'endgame, opp solve rate <50% — convert',
       'empty': '(no candidates)',
     }[reason] || reason;
     cur_state.candidates.forEach((c, i) => {

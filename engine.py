@@ -273,6 +273,31 @@ def score_candidate_move(engine, board, candidate_move, num_responses=3, depth=1
     )
 
 
+def is_minor_piece_endgame(board: chess.Board) -> bool:
+    """True if EACH side has K + at most 1 non-king non-pawn piece + pawns.
+
+    Examples that qualify:
+      K+R+pawns vs K+R+pawns           (both sides 1 piece)
+      K+B+pawns vs K+N+pawns           (both sides 1 piece)
+      K+R+pawns vs K+pawns             (asymmetric, both <=1)
+      K+pawns   vs K+pawns             (pure pawn endgame)
+
+    Do NOT qualify:
+      K+R+B+pawns vs K+R               (white has 2 pieces)
+      K+Q+pawns   vs K+R+B             (black has 2 pieces)
+    """
+    for color in (chess.WHITE, chess.BLACK):
+        pieces = (
+            len(board.pieces(chess.QUEEN, color))
+            + len(board.pieces(chess.ROOK, color))
+            + len(board.pieces(chess.BISHOP, color))
+            + len(board.pieces(chess.KNIGHT, color))
+        )
+        if pieces > 1:
+            return False
+    return True
+
+
 def apply_maintainer_rules(candidates_with_evals, target_eval,
                             mate_distance=None,
                             max_drop_below=1.0,
@@ -516,11 +541,9 @@ class NettlesomeBot:
             self.baseline_bot.set_equilibrium(0.0)
 
     def _in_endgame(self, board: chess.Board) -> bool:
-        """Endgame heuristic: late move count OR few pieces remaining."""
-        if self._move_counter >= self.endgame_min_move:
-            return True
-        piece_count = chess.popcount(board.occupied)
-        return piece_count <= self.endgame_min_pieces
+        """Endgame trigger: each side has K + at most 1 non-king non-pawn
+        piece + pawns. See is_minor_piece_endgame docstring."""
+        return is_minor_piece_endgame(board)
 
     def note_opponent_reply(self, opponent_move: chess.Move, board=None):
         """Record that the opponent just played `opponent_move`. If we set a
