@@ -51,6 +51,13 @@ state = {
     #  "eval_cost", "gap", "p_maia"}
     "last_trap_event": None,
     "event_seq": 0,  # monotonic counter so UI can detect new events
+    # Cache: FEN -> trap_info from find_puzzle_trap. Populated by
+    # serialize_state, consumed by api_move. Necessary because SF with
+    # Threads>1 is non-deterministic; running find_puzzle_trap twice on
+    # the same position (once for the UI display, once when validating
+    # the user's move) was producing inconsistent trap qualifications,
+    # which made auto-target-updates silently fail.
+    "trap_cache": {},
 }
 
 # Snapshots of completed/in-progress games keyed by snapshot_id, for forks.
@@ -150,13 +157,22 @@ def serialize_state():
         if chosen is not None:
             maintainer_pick_uci = chosen.uci()
         # Look for an available puzzle trap (Stonefish's actual trap logic).
-        try:
-            trap_info = find_puzzle_trap(
-                state["sf"], state["maia_oracle"], board,
-                depth=state["depth"],
-            )
-        except Exception:
-            trap_info = None
+        # Cache the result keyed on FEN -- api_move re-uses this when checking
+        # whether the user's move was a trap, avoiding SF threading-related
+        # non-determinism that would otherwise make the second find_puzzle_trap
+        # call disagree with this one.
+        fen = board.fen()
+        if fen in state["trap_cache"]:
+            trap_info = state["trap_cache"][fen]
+        else:
+            try:
+                trap_info = find_puzzle_trap(
+                    state["sf"], state["maia_oracle"], board,
+                    depth=state["depth"],
+                )
+            except Exception:
+                trap_info = None
+            state["trap_cache"][fen] = trap_info
 
     return {
         "fen": board.fen(),
@@ -219,14 +235,21 @@ def api_move():
         # at on each ply (target updates mid-game after trap resolutions).
         target_before = state["target"]
         # Check whether THIS move qualifies as a trap, BEFORE we push it.
-        # Used after Maia replies to decide whether to fire a trap-resolution
-        # notification and auto-update target.
+        # Prefer the cached trap_info that serialize_state populated when
+        # rendering this position -- SF with Threads>1 can give different
+        # trap qualifications on a second call, which would silently break
+        # the auto-target-update on a trap that the UI told the user about.
+        fen_before = board.fen()
         pending_trap = None
-        try:
-            tinfo = find_puzzle_trap(state["sf"], state["maia_oracle"], board,
-                                      depth=state["depth"])
-        except Exception:
-            tinfo = None
+        if fen_before in state["trap_cache"]:
+            tinfo = state["trap_cache"][fen_before]
+        else:
+            try:
+                tinfo = find_puzzle_trap(state["sf"], state["maia_oracle"],
+                                          board, depth=state["depth"])
+            except Exception:
+                tinfo = None
+            state["trap_cache"][fen_before] = tinfo
         if tinfo:
             for q in tinfo["all_qualifying"]:
                 if q["uci"] == move.uci():
@@ -292,6 +315,7 @@ def api_reset():
         state["history"] = []
         state["target"] = 0.0
         state["last_trap_event"] = None
+        state["trap_cache"] = {}
         state["user_color"] = (chess.WHITE if color == "w" else chess.BLACK)
         if state["user_color"] == chess.BLACK:
             maia_plays()
