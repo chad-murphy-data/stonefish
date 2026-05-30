@@ -58,6 +58,16 @@ state = {
     # the user's move) was producing inconsistent trap qualifications,
     # which made auto-target-updates silently fail.
     "trap_cache": {},
+    # Give-back: after Maia FINDS a trap, the maintainer enters give-back
+    # for 5 user moves, where the effective target is lowered by
+    # give_back_drop. The bot's actual NettlesomeBot uses WeakenedSF(1500)
+    # for this; in the manual UI we approximate by holding the lower
+    # target so the rec naturally picks sub-optimal moves. After the 5
+    # moves complete, state["target"] is updated to whatever eval landed
+    # at -- the "post-give-back equilibrium". Mirrors NettlesomeBot's
+    # _refresh_equilibrium_next deferred-refresh on found traps.
+    "give_back_remaining": 0,
+    "give_back_drop": 0.5,
 }
 
 # Snapshots of completed/in-progress games keyed by snapshot_id, for forks.
@@ -124,6 +134,12 @@ def serialize_state():
     maintainer_reason = None
     if (board.turn == user_color
             and not board.is_game_over()):
+        # Effective target accounts for give-back: while it's active, the
+        # maintainer aims at a lower target so the rec naturally picks
+        # sub-optimal moves and eval bleeds over the give-back window.
+        effective_target = state["target"]
+        if state["give_back_remaining"] > 0:
+            effective_target -= state["give_back_drop"]
         raw = get_top_moves(state["sf"], board, num_moves=25,
                             depth=state["depth"])
         cand_tuples = []
@@ -137,7 +153,7 @@ def serialize_state():
                 "uci": move.uci(),
                 "san": san,
                 "eval": round(eval_for_us, 2),
-                "drift": round(eval_for_us - state["target"], 2),
+                "drift": round(eval_for_us - effective_target, 2),
             })
             cand_tuples.append((move, eval_for_us))
         # Detect forced mate from our POV (rule 2)
@@ -152,7 +168,7 @@ def serialize_state():
             pass
         # Apply the maintainer's decision rules to pick the recommended move
         chosen, maintainer_reason = apply_maintainer_rules(
-            cand_tuples, state["target"], mate_distance=mate_dist,
+            cand_tuples, effective_target, mate_distance=mate_dist,
         )
         if chosen is not None:
             maintainer_pick_uci = chosen.uci()
@@ -188,6 +204,11 @@ def serialize_state():
         "trap": trap_info,
         "maintainer_pick_uci": maintainer_pick_uci,
         "maintainer_reason": maintainer_reason,
+        "give_back_remaining": state["give_back_remaining"],
+        "give_back_drop": state["give_back_drop"],
+        "effective_target": round(effective_target, 2)
+            if board.turn == user_color and not board.is_game_over()
+            else round(state["target"], 2),
         "last_trap_event": state["last_trap_event"],
         "ply": board.ply(),
         "move_number": board.fullmove_number,
@@ -267,16 +288,25 @@ def api_move():
         # Maia replies if game still on
         if not board.is_game_over():
             maia_plays()
-            # If the user move was a trap, resolve it now (Maia just replied):
-            # check whether Maia played the SF top reply, fire event, update target.
+            # If the user move was a trap, resolve it now (Maia just replied).
+            # On MISS: target updates immediately to post-resolution eval.
+            # On FOUND: enter give-back (defer target update by 5 user moves;
+            # during give-back the effective target is lowered to bleed eval).
             if pending_trap is not None:
                 reply = state["history"][-1]
                 actual_uci = reply.get("uci")
                 found = (actual_uci == pending_trap.get("sf_top_reply_uci"))
-                # Post-resolution eval becomes the new target.
-                new_target = eval_white(board) * sign
-                new_target = max(-10.0, min(10.0, new_target))
+                post_eval = eval_white(board) * sign
+                post_eval = max(-10.0, min(10.0, post_eval))
                 state["event_seq"] += 1
+                if found:
+                    # Give-back: keep target where it was, drop the effective
+                    # target by give_back_drop for the next 5 user moves.
+                    state["give_back_remaining"] = 5
+                    new_target_for_event = round(state["target"], 2)
+                else:
+                    state["target"] = post_eval
+                    new_target_for_event = round(post_eval, 2)
                 state["last_trap_event"] = {
                     "id": state["event_seq"],
                     "ply": board.ply(),
@@ -284,13 +314,29 @@ def api_move():
                     "trap_san": pending_trap["san"],
                     "expected_reply_san": pending_trap["sf_top_reply_san"],
                     "actual_reply_san": reply.get("san"),
-                    "old_target": round(state["target"], 2),
-                    "new_target": round(new_target, 2),
+                    "old_target": round(target_before, 2),
+                    "new_target": new_target_for_event,
                     "eval_cost": pending_trap["eval_cost"],
                     "gap": pending_trap["gap"],
                     "p_maia": pending_trap["p_maia_top"],
+                    "give_back_started": found,
+                    "give_back_drop": state["give_back_drop"],
                 }
-                state["target"] = new_target
+            elif state["give_back_remaining"] > 0:
+                # Mid give-back, no new trap fired -- decrement the counter.
+                # When it reaches 0, lock in the new target = current eval.
+                state["give_back_remaining"] -= 1
+                if state["give_back_remaining"] == 0:
+                    post_eval = eval_white(board) * sign
+                    post_eval = max(-10.0, min(10.0, post_eval))
+                    state["target"] = post_eval
+                    state["event_seq"] += 1
+                    state["last_trap_event"] = {
+                        "id": state["event_seq"],
+                        "ply": board.ply(),
+                        "give_back_ended": True,
+                        "new_target": round(post_eval, 2),
+                    }
         return jsonify(serialize_state())
 
 
@@ -316,6 +362,7 @@ def api_reset():
         state["target"] = 0.0
         state["last_trap_event"] = None
         state["trap_cache"] = {}
+        state["give_back_remaining"] = 0
         state["user_color"] = (chess.WHITE if color == "w" else chess.BLACK)
         if state["user_color"] == chess.BLACK:
             maia_plays()
@@ -538,6 +585,19 @@ HTML_PAGE = """
     </div>
   </div>
 
+  <div id="give-back-panel" class="trap-panel" style="display:none;
+       background: #3a2c14; border-color: #6b4523;">
+    <div class="row"><span class="label" style="color:#e36a6a;">
+      GIVE-BACK ACTIVE</span></div>
+    <div id="give-back-detail" class="row"></div>
+    <div class="small">
+      Maia found your last trap. The maintainer is targeting a lower
+      eval for the next few moves so you bleed advantage; after
+      give-back ends the target locks in at whatever eval you've
+      settled at.
+    </div>
+  </div>
+
   <div id="trap-panel" class="trap-panel" style="display:none;">
     <div class="row"><span class="label">PUZZLE MOMENT AVAILABLE</span></div>
     <div id="trap-detail" class="row"></div>
@@ -622,6 +682,16 @@ function checkTrapEvent(state) {
   if (!ev) return;
   if (ev.id <= lastSeenTrapEventId) return;
   lastSeenTrapEventId = ev.id;
+  // give-back end notification (no trap details, just confirms new target)
+  if (ev.give_back_ended) {
+    showNotification(
+      '<div class="title">Give-back complete</div>' +
+      '<div class="body">Target locks in at <b>' + fmtEval(ev.new_target) +
+      '</b>. Resume normal maintenance.</div>',
+      'missed'
+    );
+    return;
+  }
   const title = ev.found
     ? "Maia found the trap"
     : "Maia missed the trap";
@@ -629,8 +699,14 @@ function checkTrapEvent(state) {
     ? "She played " + ev.actual_reply_san + " (the precise reply)."
     : "Expected " + (ev.expected_reply_san || "?") +
       "; she played " + ev.actual_reply_san + ".";
-  const tgt = "Target updated: " + fmtEval(ev.old_target) + " &rarr; <b>" +
-              fmtEval(ev.new_target) + "</b>";
+  let tgt;
+  if (ev.give_back_started) {
+    tgt = "Give-back active: aim ~" + ev.give_back_drop.toFixed(1) +
+          "p below target for 5 moves.";
+  } else {
+    tgt = "Target updated: " + fmtEval(ev.old_target) + " &rarr; <b>" +
+          fmtEval(ev.new_target) + "</b>";
+  }
   showNotification(
     '<div class="title">' + title + '</div>' +
     '<div class="body">' + ev.trap_san + ' &middot; ' + detail + '<br>' +
@@ -666,6 +742,18 @@ function render() {
     gameoverRow.style.display = 'none';
   }
 
+  // Give-back panel
+  const gbPanel = document.getElementById('give-back-panel');
+  if (cur_state.give_back_remaining > 0) {
+    gbPanel.style.display = '';
+    document.getElementById('give-back-detail').innerHTML =
+      `<b>${cur_state.give_back_remaining}</b> of your moves left. ` +
+      `Effective target lowered to <b>${fmtEval(cur_state.effective_target)}</b> ` +
+      `(was ${fmtEval(cur_state.target)}).`;
+  } else {
+    gbPanel.style.display = 'none';
+  }
+
   // Trap panel
   const trapPanel = document.getElementById('trap-panel');
   const trapDetail = document.getElementById('trap-detail');
@@ -697,8 +785,6 @@ function render() {
       'mate': 'mate available',
       'below-target': 'below target',
       'above-target-no-below': 'no below-target option',
-      'above-target-drop-too-big': 'best-below too far from target',
-      'below-target-cap-exceeded': 'all options too far below target',
       'empty': '(no candidates)',
     }[reason] || reason;
     cur_state.candidates.forEach((c, i) => {
