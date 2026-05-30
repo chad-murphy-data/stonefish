@@ -88,6 +88,7 @@ def eval_white(board):
 
 def maia_plays():
     """Play Maia's move (assumes it's Maia's turn)."""
+    target_before = state["target"]
     move = state["maia"].choose_move(state["board"])
     try:
         san = state["board"].san(move)
@@ -100,6 +101,7 @@ def maia_plays():
         "ply": state["board"].ply(), "san": san,
         "eval": round(post, 2), "by": "maia",
         "uci": move.uci(),
+        "target_before": round(target_before, 2),
     })
 
 
@@ -212,6 +214,10 @@ def api_move():
             san = board.san(move)
         except Exception:
             san = move.uci()
+        # Snapshot the live target the user was holding at decision time so
+        # /api/compare and /api/fork can reconstruct what the user was aiming
+        # at on each ply (target updates mid-game after trap resolutions).
+        target_before = state["target"]
         # Check whether THIS move qualifies as a trap, BEFORE we push it.
         # Used after Maia replies to decide whether to fire a trap-resolution
         # notification and auto-update target.
@@ -233,6 +239,7 @@ def api_move():
             "ply": board.ply(), "san": san,
             "eval": round(post, 2), "by": "user",
             "uci": move.uci(),
+            "target_before": round(target_before, 2),
         })
         # Maia replies if game still on
         if not board.is_game_over():
@@ -316,12 +323,19 @@ def api_compare():
     can be used to open /fork/<snap>/<ply> URLs in a new tab."""
     from fork import compare_history
     with state_lock:
-        history_uci = [h["uci"] for h in state["history"] if h.get("uci")]
+        entries = [h for h in state["history"] if h.get("uci")]
+        history_uci = [h["uci"] for h in entries]
         if not history_uci:
             return jsonify({"error": "no game to compare"}), 400
+        # Per-ply target the user was holding at the time of each move.
+        # entries[i]["target_before"] is the target the user was aiming at
+        # when they decided their move at that ply. Falls back to 0.0 for
+        # legacy entries written before per-ply tracking.
+        targets_by_ply = [h.get("target_before", 0.0) for h in entries]
         snap_id = uuid.uuid4().hex[:12]
         snapshots[snap_id] = {
             "history": history_uci,
+            "targets_by_ply": targets_by_ply,
             "user_color": "w" if state["user_color"] == chess.WHITE else "b",
             "maia_seed": state["maia_seed"],
             "depth": state["depth"],
@@ -331,7 +345,7 @@ def api_compare():
             divergences = compare_history(
                 history_uci, state["user_color"],
                 state["sf"], state["maia_oracle"], state["depth"],
-                target_eval=state["target"],
+                targets_by_ply=targets_by_ply,
             )
         except Exception as e:
             return jsonify({"error": f"compare failed: {e}"}), 500
@@ -354,11 +368,16 @@ def api_fork(snap_id, ply):
     if snap is None:
         return jsonify({"error": "snapshot not found"}), 404
     user_color = chess.WHITE if snap["user_color"] == "w" else chess.BLACK
+    # The bot takes over at fork_ply -- inherit the target the user was
+    # actually holding at that moment in the live game.
+    targets = snap.get("targets_by_ply") or []
+    target_at_fork = (targets[ply] if 0 <= ply < len(targets)
+                      else snap.get("target", 0.0))
     try:
         result = play_fork(
             snap["history"], ply, user_color,
             snap["maia_seed"], snap["depth"],
-            target_eval=snap.get("target", 0.0),
+            target_eval=target_at_fork,
         )
         result["snapshot_id"] = snap_id
         result["fork_ply"] = ply
@@ -828,11 +847,14 @@ document.getElementById('compare-btn').addEventListener('click', async () => {
         const trapTag = d.was_trap
           ? '<span style="color:#ffaa00;font-size:11px;margin-left:6px;">[TRAP]</span>'
           : '';
+        const targetTag = (d.target !== undefined)
+          ? `<span style="color:#666;font-size:11px;margin-left:6px;">target ${d.target >= 0 ? '+' : ''}${d.target}p</span>`
+          : '';
         row.innerHTML =
           `<b style="color:#888;">${tag}</b> ` +
           `You: <b>${d.user_san}</b> &middot; ` +
           `Bot: <b style="color:#6bd968;">${d.bot_san}</b> ` +
-          `<span style="color:#888;font-size:11px;">(${d.mode})</span> ${trapTag}` +
+          `<span style="color:#888;font-size:11px;">(${d.mode})</span> ${trapTag}${targetTag}` +
           ` <a href="/fork/${data.snapshot_id}/${d.ply}" target="_blank" ` +
           `style="margin-left:8px; color:#6bb5e3;">view fork &rarr;</a>`;
         list.appendChild(row);

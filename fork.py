@@ -223,12 +223,15 @@ def play_fork(history_uci, fork_ply, user_color, maia_seed, depth,
 
 
 def compare_history(history_uci, user_color, sf, oracle, depth,
-                     target_eval=0.0):
+                     target_eval=0.0, targets_by_ply=None):
     """For each user-turn ply, compare what bot would pick to what user did.
 
+    If `targets_by_ply` is supplied (list of len(history_uci)), use the
+    per-ply target the user was holding at that moment. Otherwise fall
+    back to the single `target_eval` for every ply.
+
     Returns list of divergences:
-      [{ply, user_uci, user_san, bot_uci, bot_san, mode, was_trap}, ...]
-    Each entry is a position where the bot's pick differs from the user's.
+      [{ply, user_uci, user_san, bot_uci, bot_san, mode, was_trap, target}]
     """
     divergences = []
     for i, uci in enumerate(history_uci):
@@ -236,12 +239,14 @@ def compare_history(history_uci, user_color, sf, oracle, depth,
         board = reconstruct_board(history_uci, i)
         if board.turn != user_color:
             continue
+        t = (targets_by_ply[i] if targets_by_ply and i < len(targets_by_ply)
+             else target_eval)
         try:
             pick = bot_pick_at_ply(history_uci, i, user_color, sf, oracle,
-                                    depth, target_eval=target_eval)
+                                    depth, target_eval=t)
         except Exception as e:
             divergences.append({
-                "ply": i, "error": str(e),
+                "ply": i, "error": str(e), "target": round(t, 2),
             })
             continue
         # User's actual move
@@ -259,5 +264,6 @@ def compare_history(history_uci, user_color, sf, oracle, depth,
                 "bot_uci": pick["uci"], "bot_san": pick["san"],
                 "mode": pick["mode"],
                 "was_trap": pick["was_trap"],
+                "target": round(t, 2),
             })
     return divergences
