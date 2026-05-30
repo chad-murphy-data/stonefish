@@ -42,6 +42,7 @@ state = {
     "sf": None,
     "maia": None,
     "depth": 10,     # SF analysis depth -- set in init_engines() from CLI
+    "maia_seed": None,  # int or None; when set, Maia plays deterministically
     # Last trap-resolution event, used by the UI for notifications and
     # to auto-update the target. Set after Maia replies to a user move
     # that qualified as a trap. Has shape:
@@ -52,12 +53,19 @@ state = {
     "event_seq": 0,  # monotonic counter so UI can detect new events
 }
 
+# Snapshots of completed/in-progress games keyed by snapshot_id, for forks.
+# {snap_id: {"history": [...], "user_color": "w"|"b", "maia_seed": int|None,
+#            "depth": int, "starting_target": float}}
+snapshots = {}
+import uuid
 
-def init_engines(depth=10):
+
+def init_engines(depth=10, maia_seed=None):
     state["sf"] = chess.engine.SimpleEngine.popen_uci(STOCKFISH_PATH)
     state["sf"].configure({"Threads": 2, "Hash": 256})
+    state["maia_seed"] = maia_seed
     state["maia"] = MaiaBot(MAIA_WEIGHTS_PATH,
-                            rating=1900, temperature=1.0, seed=None)
+                            rating=1900, temperature=1.0, seed=maia_seed)
     # Separate MaiaPolicyEngine for the trap-finder (uses predict_policy,
     # different API than MaiaBot.choose_move).
     state["maia_oracle"] = MaiaPolicyEngine(MAIA_WEIGHTS_PATH, rating=1900)
@@ -301,6 +309,72 @@ def api_undo():
         return jsonify(serialize_state())
 
 
+@app.route("/api/compare", methods=["POST"])
+def api_compare():
+    """Scan the current game's history; return every position where the bot
+    would have picked differently from the user. Returns a snapshot_id that
+    can be used to open /fork/<snap>/<ply> URLs in a new tab."""
+    from fork import compare_history
+    with state_lock:
+        history_uci = [h["uci"] for h in state["history"] if h.get("uci")]
+        if not history_uci:
+            return jsonify({"error": "no game to compare"}), 400
+        snap_id = uuid.uuid4().hex[:12]
+        snapshots[snap_id] = {
+            "history": history_uci,
+            "user_color": "w" if state["user_color"] == chess.WHITE else "b",
+            "maia_seed": state["maia_seed"],
+            "depth": state["depth"],
+            "target": state["target"],
+        }
+        try:
+            divergences = compare_history(
+                history_uci, state["user_color"],
+                state["sf"], state["maia_oracle"], state["depth"],
+                target_eval=state["target"],
+            )
+        except Exception as e:
+            return jsonify({"error": f"compare failed: {e}"}), 500
+        return jsonify({
+            "snapshot_id": snap_id,
+            "divergences": divergences,
+            "total_user_turns": sum(
+                1 for i in range(len(history_uci))
+                if (i % 2 == 0) == (state["user_color"] == chess.WHITE)
+            ),
+        })
+
+
+@app.route("/api/fork/<snap_id>/<int:ply>")
+def api_fork(snap_id, ply):
+    """Return the bot's continuation from ply N as JSON.
+    Used by the /fork page to render."""
+    from fork import play_fork
+    snap = snapshots.get(snap_id)
+    if snap is None:
+        return jsonify({"error": "snapshot not found"}), 404
+    user_color = chess.WHITE if snap["user_color"] == "w" else chess.BLACK
+    try:
+        result = play_fork(
+            snap["history"], ply, user_color,
+            snap["maia_seed"], snap["depth"],
+            target_eval=snap.get("target", 0.0),
+        )
+        result["snapshot_id"] = snap_id
+        result["fork_ply"] = ply
+        result["user_color"] = snap["user_color"]
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": f"fork failed: {e}"}), 500
+
+
+@app.route("/fork/<snap_id>/<int:ply>")
+def fork_page(snap_id, ply):
+    """Render a fork as a static read-only game in a new tab."""
+    return render_template_string(FORK_HTML_PAGE,
+                                   snap_id=snap_id, ply=ply)
+
+
 HTML_PAGE = """
 <!DOCTYPE html>
 <html>
@@ -396,6 +470,7 @@ HTML_PAGE = """
     </select>
     <button id="reset-btn">New game</button>
     <button id="undo-btn">Undo</button>
+    <button id="compare-btn">Compare to bot</button>
   </div>
   <div id="status">Ready.</div>
 </div>
@@ -442,6 +517,15 @@ HTML_PAGE = """
 
   <h3 style="margin: 16px 0 8px; font-size: 14px; color: #aaa;">Move history</h3>
   <div id="history"></div>
+
+  <div id="compare-panel" style="display:none;">
+    <h3 style="margin: 16px 0 8px; font-size: 14px; color: #aaa;">
+      Divergences (your picks vs bot's picks)
+    </h3>
+    <div id="divergences" style="background: #2a2a2a; padding: 10px;
+         border-radius: 6px; font-size: 13px; max-height: 320px;
+         overflow-y: auto;"></div>
+  </div>
 </div>
 
 <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
@@ -704,9 +788,203 @@ document.getElementById('undo-btn').addEventListener('click', async () => {
   setStatus('Ready.');
 });
 
+document.getElementById('compare-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('compare-btn');
+  btn.disabled = true;
+  setStatus('Comparing your picks to the bot (this can take 20-60s)...');
+  try {
+    const r = await fetch('/api/compare', {method: 'POST'});
+    if (!r.ok) {
+      const e = await r.json();
+      setStatus('Compare failed: ' + (e.error || 'unknown'));
+      return;
+    }
+    const data = await r.json();
+    const panel = document.getElementById('compare-panel');
+    const list = document.getElementById('divergences');
+    panel.style.display = '';
+    list.innerHTML = '';
+    if (data.divergences.length === 0) {
+      list.innerHTML = '<div style="color:#aaa;">No divergences ' +
+                       '&mdash; you picked the same move as the bot every turn.</div>';
+    } else {
+      const header = document.createElement('div');
+      header.style.cssText = 'color:#aaa; margin-bottom:8px;';
+      header.textContent = `${data.divergences.length} divergence(s) out of ` +
+                           `${data.total_user_turns} of your moves`;
+      list.appendChild(header);
+      data.divergences.forEach(d => {
+        if (d.error) {
+          const row = document.createElement('div');
+          row.style.cssText = 'padding:4px 0; color:#e36a6a;';
+          row.textContent = `Ply ${d.ply}: error ${d.error}`;
+          list.appendChild(row);
+          return;
+        }
+        const moveNum = Math.floor(d.ply / 2) + 1;
+        const tag = (d.ply % 2 === 0) ? `${moveNum}.` : `${moveNum}...`;
+        const row = document.createElement('div');
+        row.style.cssText = 'padding:6px 0; border-bottom:1px solid #333;';
+        const trapTag = d.was_trap
+          ? '<span style="color:#ffaa00;font-size:11px;margin-left:6px;">[TRAP]</span>'
+          : '';
+        row.innerHTML =
+          `<b style="color:#888;">${tag}</b> ` +
+          `You: <b>${d.user_san}</b> &middot; ` +
+          `Bot: <b style="color:#6bd968;">${d.bot_san}</b> ` +
+          `<span style="color:#888;font-size:11px;">(${d.mode})</span> ${trapTag}` +
+          ` <a href="/fork/${data.snapshot_id}/${d.ply}" target="_blank" ` +
+          `style="margin-left:8px; color:#6bb5e3;">view fork &rarr;</a>`;
+        list.appendChild(row);
+      });
+    }
+    setStatus('Compare done. ' + data.divergences.length + ' divergences.');
+  } finally {
+    btn.disabled = false;
+  }
+});
+
 fetchState();
 </script>
 
+</body>
+</html>
+"""
+
+
+FORK_HTML_PAGE = """
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Fork: bot takes over at ply {{ ply }}</title>
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css">
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    margin: 0; padding: 16px;
+    background: #1e1e1e; color: #ddd;
+    display: flex; gap: 24px;
+  }
+  #board { width: 480px; }
+  #side { flex: 1; min-width: 380px; max-width: 600px; }
+  h2 { margin: 0 0 8px; font-size: 18px; font-weight: 500; }
+  .meta { color: #888; font-size: 13px; margin-bottom: 12px; }
+  .result {
+    font-size: 18px; font-weight: bold; padding: 10px 14px;
+    border-radius: 6px; margin: 12px 0;
+  }
+  .result.stonefish { background: #2c4a2c; color: #6bd968; }
+  .result.maia { background: #4a2c2c; color: #e36a6a; }
+  .result.draw { background: #2a2a2a; color: #ddd; }
+  .stats { background: #2a2a2a; padding: 12px; border-radius: 6px; margin: 12px 0;
+           font-size: 13px; }
+  .stats .row { display: flex; justify-content: space-between; padding: 3px 0; }
+  .stats .row label { color: #888; }
+  #moves {
+    max-height: 540px; overflow-y: auto;
+    padding: 8px; background: #2a2a2a; border-radius: 6px;
+    font-family: monospace; font-size: 12px; line-height: 1.6;
+  }
+  .move-row { display: flex; gap: 8px; align-items: baseline; }
+  .move-num { color: #666; min-width: 24px; }
+  .move-stonefish { color: #6bd968; min-width: 80px; }
+  .move-maia { color: #6bb5e3; min-width: 80px; }
+  .move-original { color: #444; min-width: 80px; font-style: italic; }
+  .move-eval { color: #888; font-size: 11px; margin-left: auto; }
+  .divider {
+    border-top: 1px dashed #555; margin: 6px 0; padding-top: 6px;
+    color: #aaa; font-style: italic;
+  }
+</style>
+</head>
+<body>
+<div>
+  <h2>Bot's continuation from ply {{ ply }}</h2>
+  <div id="board"></div>
+  <div class="meta" id="meta">Loading...</div>
+</div>
+<div id="side">
+  <div id="result"></div>
+  <div id="stats" class="stats" style="display:none;"></div>
+  <h3 style="margin: 12px 0 6px; font-size: 14px; color: #aaa;">Move list</h3>
+  <div id="moves">Loading...</div>
+</div>
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
+<script>
+const SNAP_ID = "{{ snap_id }}";
+const FORK_PLY = {{ ply }};
+let board = null;
+
+async function load() {
+  const r = await fetch(`/api/fork/${SNAP_ID}/${FORK_PLY}`);
+  if (!r.ok) {
+    const e = await r.json();
+    document.getElementById('meta').textContent = 'Error: ' + (e.error || 'unknown');
+    return;
+  }
+  const data = await r.json();
+  document.getElementById('meta').innerHTML =
+    `User color: <b>${data.user_color === 'w' ? 'White' : 'Black'}</b> &middot; ` +
+    `starting eval at fork: <b>${data.starting_eval > 0 ? '+' : ''}${data.starting_eval}p</b>`;
+
+  const resultEl = document.getElementById('result');
+  const resName = data.fork_result;
+  const resLabel = resName === 'stonefish' ? 'Stonefish wins' :
+                   resName === 'maia' ? 'Maia wins' : 'Draw';
+  resultEl.className = 'result ' + resName;
+  resultEl.textContent = resLabel + ' (' + data.result_pgn + ')';
+
+  const statsEl = document.getElementById('stats');
+  statsEl.style.display = '';
+  statsEl.innerHTML =
+    `<div class="row"><label>Bot traps set:</label><b>${data.trap_count}</b></div>` +
+    `<div class="row"><label>Maia found:</label><b>${data.find_count}/${data.trap_count}</b></div>` +
+    `<div class="row"><label>Fork moves:</label><b>${data.fork_moves.length}</b></div>`;
+
+  // Move list: original up to fork ply, then fork from there
+  const movesEl = document.getElementById('moves');
+  movesEl.innerHTML = '';
+  // original moves (italic gray)
+  for (let i = 0; i < data.original_san.length; i++) {
+    const moveNum = Math.floor(i / 2) + 1;
+    const tag = (i % 2 === 0) ? `${moveNum}.` : `${moveNum}...`;
+    const div = document.createElement('div');
+    div.className = 'move-row';
+    div.innerHTML = `<span class="move-num">${tag}</span>` +
+                    `<span class="move-original">${data.original_san[i]}</span>`;
+    movesEl.appendChild(div);
+  }
+  // divider
+  const div = document.createElement('div');
+  div.className = 'divider';
+  div.textContent = '— bot takes over —';
+  movesEl.appendChild(div);
+  // fork moves
+  data.fork_moves.forEach(m => {
+    const moveNum = Math.floor((m.ply - 1) / 2) + 1;
+    const tag = (m.ply % 2 === 1) ? `${moveNum}.` : `${moveNum}...`;
+    const row = document.createElement('div');
+    row.className = 'move-row';
+    const cls = m.by === 'stonefish' ? 'move-stonefish' : 'move-maia';
+    const evalStr = (m.eval >= 0 ? '+' : '') + m.eval + 'p';
+    row.innerHTML = `<span class="move-num">${tag}</span>` +
+                    `<span class="${cls}">${m.san}</span>` +
+                    `<span class="move-eval">${evalStr}</span>`;
+    movesEl.appendChild(row);
+  });
+  // initial board = starting fen
+  board = Chessboard('board', {
+    position: data.starting_fen,
+    draggable: false,
+  });
+  if (data.user_color === 'b') board.orientation('black');
+}
+
+load();
+</script>
 </body>
 </html>
 """
@@ -716,7 +994,10 @@ if __name__ == "__main__":
     import sys
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 5000
     depth = int(sys.argv[2]) if len(sys.argv) > 2 else 10
-    init_engines(depth=depth)
+    maia_seed = int(sys.argv[3]) if len(sys.argv) > 3 else None
+    init_engines(depth=depth, maia_seed=maia_seed)
+    if maia_seed is not None:
+        print(f"  Maia is seeded ({maia_seed}) -- her moves are deterministic.")
     print(f"Starting Stonefish web UI on http://localhost:{port} (depth={depth})")
     if depth < 12:
         print(f"  note: depth={depth} can show inaccurate evals on tactical "
