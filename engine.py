@@ -308,20 +308,33 @@ def apply_maintainer_rules(candidates_with_evals, target_eval,
     if mate_distance is not None and 0 < mate_distance <= mate_in_override:
         return candidates_with_evals[0][0], "mate"
 
-    # Rule 1: prefer below-target, but cap how far below we'll go
+    # Rule 1: prefer below-target, but cap how far below we'll go.
+    # Partition candidates into below-or-at target vs strictly above target.
     below = [(m, ev) for m, ev in candidates_with_evals if ev <= target_eval]
+    above = [(m, ev) for m, ev in candidates_with_evals if ev > target_eval]
+
     if below:
         best_below = max(below, key=lambda x: x[1])
         drop = target_eval - best_below[1]
         if drop <= max_drop_below:
             return best_below[0], "below-target"
-        # Best-below is too far below target -- fall through to above-target
-        reason = "above-target-drop-too-big"
-    else:
-        reason = "above-target-no-below"
+        # Best-below is too far below target -- prefer the smallest move
+        # that's ABOVE target if one exists. (Picking min across ALL
+        # candidates is wrong: that finds the most-below candidate, the
+        # opposite of what we want.)
+        if above:
+            best_above = min(above, key=lambda x: x[1])
+            return best_above[0], "above-target-drop-too-big"
+        # No above candidates either -- stuck with best-below even though
+        # it's beyond the cap.
+        return best_below[0], "below-target-cap-exceeded"
 
-    best_above = min(candidates_with_evals, key=lambda x: x[1])
-    return best_above[0], reason
+    # No candidates at or below target -- pick the smallest above.
+    if above:
+        best_above = min(above, key=lambda x: x[1])
+        return best_above[0], "above-target-no-below"
+    # Fall through: shouldn't happen if candidates_with_evals is non-empty.
+    return candidates_with_evals[0][0], "empty"
 
 
 def find_puzzle_trap(sf, maia_oracle, board, depth=10, num_candidates=7,

@@ -698,6 +698,8 @@ function render() {
       'below-target': 'below target',
       'above-target-no-below': 'no below-target option',
       'above-target-drop-too-big': 'best-below too far from target',
+      'below-target-cap-exceeded': 'all options too far below target',
+      'empty': '(no candidates)',
     }[reason] || reason;
     cur_state.candidates.forEach((c, i) => {
       const isTrap = (c.uci === trapUci);
