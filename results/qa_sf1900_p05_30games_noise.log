@@ -1,0 +1,51 @@
+Analyzing: results/qa_tester_n30_d10.json
+  games/bucket = 30   depth = 10   probs = [0.5]
+
+========================================================================
+BUCKET: find_prob = 0.5   (n=30 games)
+========================================================================
+Outcome:               W-D-L = 10-1-19   Stonefish score = 35.0%
+
+Correlation (Pearson r):
+  find_rate     ~ outcome   : r = -0.334   (want strongly NEGATIVE for the trap mechanic to work)
+  trap_signed   ~ outcome   : r = +0.531   (want POSITIVE; bigger trap-net = win)
+  baseline_drift~ outcome   : r = +0.303   (want NEAR ZERO; if strong, drift is driving outcomes)
+
+Signal vs noise (pawns):
+  median |trap impact| per event:    0.470
+  median |non-trap drift| per move:  0.025
+  SNR (per-event / per-move):        18.80x
+  median |trap impact| per game:     2.085
+
+Per-game breakdown:
+   G  outc   find  mom  fnd  mvs  base  gvbk  egPr  base_drift   trap_net
+   1     W    80%    5    4   93    22    20     0      +11.36      +5.50
+   2     L    60%    5    3   89    24    15     0       +6.48      +0.48
+   3     W     0%    3    0   63    26     0     3       +4.78      +4.76
+   4     L    75%    4    3   81    22    14     0       +6.05      -0.60
+   5     L    50%    4    2   68    20    10     0       +1.24      -0.42
+   6     L   100%    2    2   57    16    10     0       +3.05      -0.84
+   7     W    50%    2    1   41    14     5     0       +1.47      +0.13
+   8     L    50%    2    1   65    25     5     0       +6.87      -0.01
+   9     L   100%    2    2   56    18     8     0       +5.07      -1.35
+  10     L    40%    5    2  175    25    10    47      +11.19      +1.08
+  11     L    75%    4    3   68    15    15     0       +3.47      -1.94
+  12     L    50%    4    2   71    21    10     0       +7.45      -0.50
+  13     W    50%    4    2  129    51    10     0      +19.38      +4.15
+  14     W    33%    3    1  120    21     5    31       +5.07      +0.74
+  15     L    75%    4    3   50     9    12     0       +3.82      -1.50
+  16     L    33%    3    1  139    22     5    39       +6.79      +1.23
+  17     L   100%    3    3   68    16    15     0       +2.38      -2.02
+  18     W    50%    6    3   78    18    15     0       +7.50     +14.15
+  19     L    67%    3    2   96    35    10     0       +4.96      -1.30
+  20     L   100%    2    2   71    24     9     0       +4.56      -0.77
+  21     L   100%    1    1   46    17     5     0       +6.29      -0.67
+  22     L   100%    3    3   55     9    15     0       +1.04      -2.02
+  23     W    57%    7    4  115    31    20     0       +8.23      +0.35
+  24     D    67%    3    2   97    35    10     0       +7.05      -0.62
+  25     L    33%    3    1   54    23     1     0       +5.15      +1.26
+  26     W   100%    5    5  162    51    25     0       +4.76      -1.73
+  27     W    67%    3    2   85    30    10     0       +3.89      +0.07
+  28     L    43%    7    3   67     7    15     4       +1.28      +2.26
+  29     L   100%    3    3   74    19    15     0       +4.76      -1.14
+  30     W    33%    3    1  128    21     5    35       +4.79      +3.70

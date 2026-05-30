@@ -1,0 +1,114 @@
+{
+  "num_games": 10,
+  "depth": 12,
+  "per_game": [
+    {
+      "game": 1,
+      "color": "W",
+      "moves": 131,
+      "moments": 1,
+      "found": 0,
+      "find_rate": 0.0,
+      "bot_score": 1.0,
+      "elapsed_s": 44.6
+    },
+    {
+      "game": 2,
+      "color": "B",
+      "moves": 109,
+      "moments": 2,
+      "found": 1,
+      "find_rate": 0.5,
+      "bot_score": 0.5,
+      "elapsed_s": 32.8
+    },
+    {
+      "game": 3,
+      "color": "W",
+      "moves": 43,
+      "moments": 2,
+      "found": 1,
+      "find_rate": 0.5,
+      "bot_score": 1.0,
+      "elapsed_s": 25.1
+    },
+    {
+      "game": 4,
+      "color": "B",
+      "moves": 34,
+      "moments": 4,
+      "found": 2,
+      "find_rate": 0.5,
+      "bot_score": 1.0,
+      "elapsed_s": 13.1
+    },
+    {
+      "game": 5,
+      "color": "W",
+      "moves": 27,
+      "moments": 1,
+      "found": 1,
+      "find_rate": 1.0,
+      "bot_score": 1.0,
+      "elapsed_s": 16.2
+    },
+    {
+      "game": 6,
+      "color": "B",
+      "moves": 179,
+      "moments": 0,
+      "found": 0,
+      "find_rate": null,
+      "bot_score": 0.5,
+      "elapsed_s": 53.8
+    },
+    {
+      "game": 7,
+      "color": "W",
+      "moves": 75,
+      "moments": 1,
+      "found": 0,
+      "find_rate": 0.0,
+      "bot_score": 1.0,
+      "elapsed_s": 49.6
+    },
+    {
+      "game": 8,
+      "color": "B",
+      "moves": 180,
+      "moments": 3,
+      "found": 1,
+      "find_rate": 0.3333333333333333,
+      "bot_score": 0.5,
+      "elapsed_s": 47.8
+    },
+    {
+      "game": 9,
+      "color": "W",
+      "moves": 51,
+      "moments": 2,
+      "found": 2,
+      "find_rate": 1.0,
+      "bot_score": 1.0,
+      "elapsed_s": 26.0
+    },
+    {
+      "game": 10,
+      "color": "B",
+      "moves": 103,
+      "moments": 0,
+      "found": 0,
+      "find_rate": null,
+      "bot_score": 0.5,
+      "elapsed_s": 36.6
+    }
+  ],
+  "rules_passed": [
+    false,
+    false,
+    true,
+    false
+  ],
+  "moments_mean": 1.6,
+  "correlation": -0.10084389681792216
+}

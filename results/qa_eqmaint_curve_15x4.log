@@ -1,0 +1,84 @@
+QA-tester: 15 games per find-prob, depth=10
+Find probabilities: [0.3, 0.5, 0.7, 0.9]
+Opponent: CoinFlipTesterBot (SF baseline + weighted coin at trap moments)
+======================================================================
+
+=== find_probability = 0.30 (15 games) ===
+  G 1: L  140mv  moments= 5  found= 2  find=  40%  15.1s
+  G 2: W   84mv  moments= 4  found= 0  find=   0%  13.9s
+  G 3: W  183mv  moments= 7  found= 3  find=  43%  26.4s
+  G 4: W   64mv  moments= 4  found= 1  find=  25%  17.8s
+  G 5: W   97mv  moments= 5  found= 2  find=  40%  19.4s
+  G 6: W  112mv  moments= 1  found= 0  find=   0%  17.1s
+  G 7: W   83mv  moments= 5  found= 1  find=  20%  14.8s
+  G 8: W   78mv  moments= 3  found= 1  find=  33%  18.0s
+  G 9: W   93mv  moments= 2  found= 0  find=   0%  15.8s
+  G10: W   74mv  moments= 2  found= 0  find=   0%  16.2s
+  G11: W  115mv  moments= 3  found= 1  find=  33%  18.9s
+  G12: W  104mv  moments= 5  found= 2  find=  40%  14.4s
+  G13: W   99mv  moments= 4  found= 1  find=  25%  20.3s
+  G14: W   78mv  moments= 3  found= 0  find=   0%  18.3s
+  G15: L   92mv  moments= 5  found= 3  find=  60%  19.5s
+
+=== find_probability = 0.50 (15 games) ===
+  G 1: W  105mv  moments= 3  found= 0  find=   0%  17.8s
+  G 2: W   82mv  moments= 3  found= 1  find=  33%  26.3s
+  G 3: W   77mv  moments= 1  found= 0  find=   0%  14.5s
+  G 4: W   76mv  moments= 3  found= 2  find=  67%  15.0s
+  G 5: D  200mv  moments= 4  found= 4  find= 100%  45.6s
+  G 6: L   63mv  moments= 6  found= 2  find=  33%  15.1s
+  G 7: D  200mv  moments= 3  found= 2  find=  67%  41.8s
+  G 8: W   88mv  moments= 5  found= 2  find=  40%  22.3s
+  G 9: W  109mv  moments= 5  found= 2  find=  40%  22.7s
+  G10: L   79mv  moments= 4  found= 3  find=  75%  17.4s
+  G11: W   83mv  moments= 3  found= 1  find=  33%  15.8s
+  G12: W  124mv  moments= 2  found= 0  find=   0%  20.5s
+  G13: W   85mv  moments= 6  found= 1  find=  17%  12.8s
+  G14: W   94mv  moments= 3  found= 1  find=  33%  25.4s
+  G15: L   84mv  moments= 3  found= 3  find= 100%  15.7s
+
+=== find_probability = 0.70 (15 games) ===
+  G 1: D  200mv  moments= 4  found= 3  find=  75%  28.6s
+  G 2: W  132mv  moments= 3  found= 1  find=  33%  24.8s
+  G 3: D  200mv  moments= 5  found= 3  find=  60%  32.6s
+  G 4: L  107mv  moments= 3  found= 3  find= 100%  23.5s
+  G 5: D  137mv  moments= 5  found= 4  find=  80%  34.0s
+  G 6: L   95mv  moments= 5  found= 4  find=  80%  18.2s
+  G 7: L  100mv  moments= 2  found= 2  find= 100%  24.8s
+  G 8: L  109mv  moments= 6  found= 4  find=  67%  20.9s
+  G 9: W  121mv  moments= 3  found= 1  find=  33%  24.9s
+  G10: D  172mv  moments= 7  found= 5  find=  71%  38.9s
+  G11: L  152mv  moments= 5  found= 4  find=  80%  26.6s
+  G12: L   71mv  moments= 2  found= 2  find= 100%  16.9s
+  G13: L   70mv  moments= 3  found= 3  find= 100%  13.4s
+  G14: L   67mv  moments= 3  found= 2  find=  67%  15.9s
+  G15: W   65mv  moments= 2  found= 0  find=   0%  16.9s
+
+=== find_probability = 0.90 (15 games) ===
+  G 1: L  100mv  moments= 2  found= 2  find= 100%  36.2s
+  G 2: L   91mv  moments= 4  found= 4  find= 100%  17.4s
+  G 3: L   62mv  moments= 2  found= 2  find= 100%  10.5s
+  G 4: L   95mv  moments= 4  found= 3  find=  75%  17.6s
+  G 5: L  166mv  moments= 3  found= 1  find=  33%  27.7s
+  G 6: L   59mv  moments= 4  found= 4  find= 100%  12.0s
+  G 7: D  200mv  moments= 0  found= 0  find=  n/a  34.6s
+  G 8: L   67mv  moments= 5  found= 4  find=  80%  14.3s
+  G 9: L   68mv  moments= 2  found= 2  find= 100%  18.2s
+  G10: L   63mv  moments= 1  found= 1  find= 100%  21.8s
+  G11: L   72mv  moments= 2  found= 2  find= 100%  17.2s
+  G12: L   65mv  moments= 3  found= 3  find= 100%  13.3s
+  G13: L   76mv  moments= 3  found= 3  find= 100%  13.3s
+  G14: L  115mv  moments= 5  found= 4  find=  80%  18.0s
+  G15: L  106mv  moments= 3  found= 3  find= 100%  22.3s
+
+======================================================================
+SUMMARY
+======================================================================
+find_prob  games      W-D-L   Stonefish      Opp  avg moments  actual find
+--------------------------------------------------------------------------------
+     0.30     15     13-0-2      86.7%    13.3%         3.9          29%
+     0.50     15     10-2-3      73.3%    26.7%         3.6          44%
+     0.70     15      3-4-8      33.3%    66.7%         3.9          71%
+     0.90     15     0-1-14       3.3%    96.7%         2.9          88%
+
+Raw data: results/qa_tester_n15_d10.json

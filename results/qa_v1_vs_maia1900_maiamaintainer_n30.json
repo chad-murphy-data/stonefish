@@ -1,0 +1,314 @@
+{
+  "num_games": 30,
+  "depth": 10,
+  "per_game": [
+    {
+      "game": 1,
+      "color": "W",
+      "moves": 83,
+      "moments": 2,
+      "found": 2,
+      "find_rate": 1.0,
+      "bot_score": 1.0,
+      "elapsed_s": 22.5
+    },
+    {
+      "game": 2,
+      "color": "B",
+      "moves": 62,
+      "moments": 5,
+      "found": 0,
+      "find_rate": 0.0,
+      "bot_score": 1.0,
+      "elapsed_s": 10.2
+    },
+    {
+      "game": 3,
+      "color": "W",
+      "moves": 63,
+      "moments": 3,
+      "found": 1,
+      "find_rate": 0.3333333333333333,
+      "bot_score": 1.0,
+      "elapsed_s": 11.7
+    },
+    {
+      "game": 4,
+      "color": "B",
+      "moves": 64,
+      "moments": 3,
+      "found": 2,
+      "find_rate": 0.6666666666666666,
+      "bot_score": 1.0,
+      "elapsed_s": 15.2
+    },
+    {
+      "game": 5,
+      "color": "W",
+      "moves": 77,
+      "moments": 3,
+      "found": 1,
+      "find_rate": 0.3333333333333333,
+      "bot_score": 1.0,
+      "elapsed_s": 14.3
+    },
+    {
+      "game": 6,
+      "color": "B",
+      "moves": 56,
+      "moments": 3,
+      "found": 1,
+      "find_rate": 0.3333333333333333,
+      "bot_score": 1.0,
+      "elapsed_s": 12.8
+    },
+    {
+      "game": 7,
+      "color": "W",
+      "moves": 71,
+      "moments": 1,
+      "found": 0,
+      "find_rate": 0.0,
+      "bot_score": 1.0,
+      "elapsed_s": 18.2
+    },
+    {
+      "game": 8,
+      "color": "B",
+      "moves": 84,
+      "moments": 3,
+      "found": 1,
+      "find_rate": 0.3333333333333333,
+      "bot_score": 1.0,
+      "elapsed_s": 21.2
+    },
+    {
+      "game": 9,
+      "color": "W",
+      "moves": 103,
+      "moments": 3,
+      "found": 1,
+      "find_rate": 0.3333333333333333,
+      "bot_score": 1.0,
+      "elapsed_s": 10.7
+    },
+    {
+      "game": 10,
+      "color": "B",
+      "moves": 70,
+      "moments": 2,
+      "found": 1,
+      "find_rate": 0.5,
+      "bot_score": 1.0,
+      "elapsed_s": 16.8
+    },
+    {
+      "game": 11,
+      "color": "W",
+      "moves": 61,
+      "moments": 3,
+      "found": 1,
+      "find_rate": 0.3333333333333333,
+      "bot_score": 1.0,
+      "elapsed_s": 13.2
+    },
+    {
+      "game": 12,
+      "color": "B",
+      "moves": 72,
+      "moments": 1,
+      "found": 0,
+      "find_rate": 0.0,
+      "bot_score": 1.0,
+      "elapsed_s": 14.9
+    },
+    {
+      "game": 13,
+      "color": "W",
+      "moves": 59,
+      "moments": 2,
+      "found": 2,
+      "find_rate": 1.0,
+      "bot_score": 1.0,
+      "elapsed_s": 16.4
+    },
+    {
+      "game": 14,
+      "color": "B",
+      "moves": 76,
+      "moments": 2,
+      "found": 2,
+      "find_rate": 1.0,
+      "bot_score": 1.0,
+      "elapsed_s": 13.2
+    },
+    {
+      "game": 15,
+      "color": "W",
+      "moves": 75,
+      "moments": 4,
+      "found": 0,
+      "find_rate": 0.0,
+      "bot_score": 1.0,
+      "elapsed_s": 9.9
+    },
+    {
+      "game": 16,
+      "color": "B",
+      "moves": 62,
+      "moments": 3,
+      "found": 3,
+      "find_rate": 1.0,
+      "bot_score": 1.0,
+      "elapsed_s": 12.8
+    },
+    {
+      "game": 17,
+      "color": "W",
+      "moves": 71,
+      "moments": 2,
+      "found": 0,
+      "find_rate": 0.0,
+      "bot_score": 1.0,
+      "elapsed_s": 12.7
+    },
+    {
+      "game": 18,
+      "color": "B",
+      "moves": 74,
+      "moments": 4,
+      "found": 3,
+      "find_rate": 0.75,
+      "bot_score": 1.0,
+      "elapsed_s": 12.7
+    },
+    {
+      "game": 19,
+      "color": "W",
+      "moves": 81,
+      "moments": 2,
+      "found": 0,
+      "find_rate": 0.0,
+      "bot_score": 1.0,
+      "elapsed_s": 13.1
+    },
+    {
+      "game": 20,
+      "color": "B",
+      "moves": 50,
+      "moments": 3,
+      "found": 1,
+      "find_rate": 0.3333333333333333,
+      "bot_score": 1.0,
+      "elapsed_s": 10.4
+    },
+    {
+      "game": 21,
+      "color": "W",
+      "moves": 119,
+      "moments": 3,
+      "found": 1,
+      "find_rate": 0.3333333333333333,
+      "bot_score": 1.0,
+      "elapsed_s": 19.1
+    },
+    {
+      "game": 22,
+      "color": "B",
+      "moves": 111,
+      "moments": 0,
+      "found": 0,
+      "find_rate": null,
+      "bot_score": 0.5,
+      "elapsed_s": 16.6
+    },
+    {
+      "game": 23,
+      "color": "W",
+      "moves": 69,
+      "moments": 3,
+      "found": 1,
+      "find_rate": 0.3333333333333333,
+      "bot_score": 1.0,
+      "elapsed_s": 12.5
+    },
+    {
+      "game": 24,
+      "color": "B",
+      "moves": 44,
+      "moments": 2,
+      "found": 1,
+      "find_rate": 0.5,
+      "bot_score": 1.0,
+      "elapsed_s": 9.6
+    },
+    {
+      "game": 25,
+      "color": "W",
+      "moves": 113,
+      "moments": 3,
+      "found": 2,
+      "find_rate": 0.6666666666666666,
+      "bot_score": 1.0,
+      "elapsed_s": 31.4
+    },
+    {
+      "game": 26,
+      "color": "B",
+      "moves": 76,
+      "moments": 2,
+      "found": 1,
+      "find_rate": 0.5,
+      "bot_score": 1.0,
+      "elapsed_s": 14.9
+    },
+    {
+      "game": 27,
+      "color": "W",
+      "moves": 69,
+      "moments": 3,
+      "found": 1,
+      "find_rate": 0.3333333333333333,
+      "bot_score": 1.0,
+      "elapsed_s": 20.9
+    },
+    {
+      "game": 28,
+      "color": "B",
+      "moves": 72,
+      "moments": 3,
+      "found": 2,
+      "find_rate": 0.6666666666666666,
+      "bot_score": 1.0,
+      "elapsed_s": 15.3
+    },
+    {
+      "game": 29,
+      "color": "W",
+      "moves": 39,
+      "moments": 2,
+      "found": 1,
+      "find_rate": 0.5,
+      "bot_score": 1.0,
+      "elapsed_s": 9.5
+    },
+    {
+      "game": 30,
+      "color": "B",
+      "moves": 70,
+      "moments": 2,
+      "found": 1,
+      "find_rate": 0.5,
+      "bot_score": 1.0,
+      "elapsed_s": 18.3
+    }
+  ],
+  "rules_passed": [
+    false,
+    false,
+    true,
+    false
+  ],
+  "moments_mean": 2.566666666666667,
+  "correlation": 0.0
+}

@@ -1,0 +1,844 @@
+Nettlesome Chess Engine Simulation
+Games per matchup: 10, Depth: 10
+Stockfish: /usr/games/stockfish
+Maia weights: /home/user/.maia/maia-1900.pb.gz (rating 1900)
+
+<UciProtocol (pid=12625)>: stderr >> [1m[31m       _
+<UciProtocol (pid=12625)>: stderr >> |   _ | |
+<UciProtocol (pid=12625)>: stderr >> |_ |_ |_|[0m v0.32.1 built May 23 2026
+<UciProtocol (pid=12625)>: stderr >> Search algorithm: classic
+============================================================
+MATCHUP: Nettlesome vs Maia
+============================================================
+  [G1/10] W=Nettlesome(d=10,c=7,ec=1.0) vs B=Maia1900
+    [G1/10] starting
+    [G1/10] ply   1 W: c4 [N! cost=0.41 gap=0.34]
+<UciProtocol (pid=12625)>: stderr >> Loading weights file from: /home/user/.maia/maia-1900.pb.gz
+<UciProtocol (pid=12625)>: stderr >> Using Eigen version 3.4.0
+<UciProtocol (pid=12625)>: stderr >> Eigen max batch size is 256.
+    [G1/10] ply   3 W: Nc3 [N! cost=0.17 gap=0.19]
+    [G1/10] ply   7 W: h3 [N! cost=0.47 gap=0.45]
+    [G1/10] ply   9 W: Nf3 [N! cost=0.47 gap=0.35]
+    [G1/10] ply  11 W: g3 [N! cost=0.32 gap=0.32]
+    [G1/10] ply  13 W: Qc2 [N! cost=0.16 gap=0.24]
+    [G1/10] ply  19 W: b4 [N! cost=0.57 gap=0.51]
+    [G1/10] ply  25 W: bxc6 [N! cost=0.23 gap=2.83]
+    [G1/10] ply  27 W: Na4 [N! cost=0.37 gap=0.21]
+    [G1/10] ply  31 W: Rb1 [N! cost=0.17 gap=0.12]
+    [G1/10] ply  33 W: Rd1 [N! cost=0.17 gap=0.19]
+    [G1/10] ply  37 W: Be2 [N! cost=0.99 gap=1.01]
+    [G1/10] ply  47 W: Qb3 [N! cost=0.24 gap=1.66]
+    [G1/10] ply  49 W: Qb6 [N! cost=0.55 gap=0.35]
+    [G1/10] ply  53 W: b7 [N! cost=0.75 gap=3.42]
+    [G1/10] ply  63 W: Ne6+
+    [G1/10] ply  65 W: f3 [N! cost=0.37 gap=0.38]
+    [G1/10] ply  67 W: Nf8+ [N! cost=0.10 gap=0.29]
+    [G1/10] ply  71 W: Nf8+ [N! cost=0.45 gap=0.71]
+    [G1/10] ply  79 W: Ke3 [N! cost=0.64 gap=0.66]
+    [G1/10] ply  85 W: Ke5 [N! cost=0.53 gap=1.42]
+    [G1/10] ply  95 W: Rf7+
+    [G1/10] ply 103 W: Kb6 [N! cost=0.36 gap=0.62]
+    [G1/10] ply 107 W: Rg4 [N! cost=0.66 gap=1.07]
+    [G1/10] ply 109 W: Rg3 [N! cost=0.31 gap=0.06]
+    [G1/10] ply 113 W: Rh8+ [N! cost=0.31 gap=0.46]
+    [G1/10] ply 123 W: Bd3
+    [G1/10] ply 127 W: Be8 [N! cost=0.15 gap=0.84]
+    [G1/10] ply 131 W: Kb5 [N! cost=0.61 gap=0.53]
+    [G1/10] ply 135 W: Kb4 [N! cost=0.23 gap=1.90]
+    [G1/10] ply 145 W: Kb4
+    [G1/10] ply 155 W: Kb4
+    [G1/10] ply 165 W: Qd8#
+  Game 1: Nettlesome(d=10,c=7,ec=1.0) wins in 165 moves (19.9s)  | nettlesome: 27 moments, opp-found-top=14/27 (52%), avg-cost=0.40p, avg-gap=0.78p
+  [G2/10] W=Maia1900 vs B=Nettlesome(d=10,c=7,ec=1.0)
+    [G2/10] starting
+    [G2/10] ply   2 B: Nc6 [N! cost=0.33 gap=0.43]
+    [G2/10] ply   6 B: f6 [N! cost=0.12 gap=0.04]
+    [G2/10] ply   8 B: fxe5 [N! cost=0.51 gap=0.95]
+    [G2/10] ply  12 B: Qd7 [N! cost=0.29 gap=0.30]
+    [G2/10] ply  16 B: Nb4 [N! cost=0.32 gap=0.31]
+    [G2/10] ply  20 B: O-O-O [N! cost=0.34 gap=0.53]
+    [G2/10] ply  22 B: Nd3 [N! cost=0.88 gap=0.71]
+    [G2/10] ply  24 B: Be7 [N! cost=0.61 gap=1.93]
+    [G2/10] ply  34 B: Ne2+ [N! cost=0.43 gap=0.69]
+    [G2/10] ply  36 B: Nexd4 [N! cost=0.43 gap=0.78]
+    [G2/10] ply  46 B: Rd7 [N! cost=0.37 gap=0.56]
+    [G2/10] ply  54 B: Qb5 [N! cost=0.12 gap=0.14]
+    [G2/10] ply  56 B: Qxe5 [N! cost=0.28 gap=0.65]
+    [G2/10] ply  66 B: Ng3+
+  Game 2: Nettlesome(d=10,c=7,ec=1.0) wins in 70 moves (9.3s)  | nettlesome: 13 moments, opp-found-top=6/13 (46%), avg-cost=0.39p, avg-gap=0.62p
+  [G3/10] W=Nettlesome(d=10,c=7,ec=1.0) vs B=Maia1900
+    [G3/10] starting
+    [G3/10] ply   1 W: Nc3 [N! cost=0.25 gap=0.22]
+    [G3/10] ply   3 W: e4 [N! cost=0.28 gap=0.09]
+    [G3/10] ply  11 W: a3 [N! cost=0.42 gap=0.32]
+    [G3/10] ply  15 W: O-O [N! cost=0.09 gap=0.23]
+    [G3/10] ply  17 W: d3 [N! cost=0.17 gap=0.07]
+    [G3/10] ply  19 W: h3 [N! cost=0.09 gap=0.60]
+    [G3/10] ply  29 W: Qxa8
+    [G3/10] ply  31 W: Nf5 [N! cost=0.37 gap=0.53]
+    [G3/10] ply  39 W: c3 [N! cost=0.42 gap=0.78]
+  Game 3: Nettlesome(d=10,c=7,ec=1.0) wins in 47 moves (7.9s)  | nettlesome: 8 moments, opp-found-top=2/8 (25%), avg-cost=0.26p, avg-gap=0.35p
+  [G4/10] W=Maia1900 vs B=Nettlesome(d=10,c=7,ec=1.0)
+    [G4/10] starting
+    [G4/10] ply   2 B: c6 [N! cost=0.08 gap=0.18]
+    [G4/10] ply   4 B: g6 [N! cost=0.34 gap=0.23]
+    [G4/10] ply   6 B: Nf6 [N! cost=0.08 gap=0.16]
+    [G4/10] ply   8 B: Bg7 [N! cost=0.19 gap=0.29]
+    [G4/10] ply  14 B: dxe5 [N! cost=0.11 gap=0.83]
+    [G4/10] ply  20 B: Bxf3 [N! cost=0.54 gap=0.44]
+    [G4/10] ply  22 B: f6 [N! cost=0.48 gap=1.08]
+    [G4/10] ply  26 B: Qa5 [N! cost=0.80 gap=0.57]
+    [G4/10] ply  28 B: Bxc3 [N! cost=0.78 gap=2.23]
+    [G4/10] ply  38 B: Rxf8
+    [G4/10] ply  48 B: Qxc3
+    [G4/10] ply  50 B: Qc1+ [N! cost=0.45 gap=1.91]
+    [G4/10] ply  54 B: Qc1+ [N! cost=0.85 gap=2.61]
+    [G4/10] ply  60 B: Qe3+ [N! cost=0.30 gap=0.77]
+    [G4/10] ply  70 B: Qxf1#
+  Game 4: Nettlesome(d=10,c=7,ec=1.0) wins in 70 moves (7.2s)  | nettlesome: 12 moments, opp-found-top=9/12 (75%), avg-cost=0.42p, avg-gap=0.94p
+  [G5/10] W=Nettlesome(d=10,c=7,ec=1.0) vs B=Maia1900
+    [G5/10] starting
+    [G5/10] ply   3 W: Nf3 [N! cost=0.30 gap=0.36]
+    [G5/10] ply  11 W: O-O [N! cost=0.15 gap=0.18]
+    [G5/10] ply  13 W: c4 [N! cost=0.08 gap=0.49]
+    [G5/10] ply  17 W: h3 [N! cost=0.54 gap=0.43]
+    [G5/10] ply  21 W: Qc2 [N! cost=0.09 gap=0.19]
+    [G5/10] ply  25 W: b4 [N! cost=0.57 gap=0.40]
+    [G5/10] ply  27 W: a4 [N! cost=0.28 gap=0.23]
+    [G5/10] ply  29 W: Bd2 [N! cost=0.42 gap=0.33]
+    [G5/10] ply  33 W: Ne2 [N! cost=0.31 gap=0.19]
+    [G5/10] ply  41 W: f3 [N! cost=0.32 gap=0.35]
+    [G5/10] ply  43 W: Qf2 [N! cost=0.39 gap=0.35]
+    [G5/10] ply  53 W: Nxg6
+    [G5/10] ply  63 W: Qc2 [N! cost=0.44 gap=1.17]
+    [G5/10] ply  67 W: Qh7+ [N! cost=0.41 gap=2.10]
+  Game 5: Nettlesome(d=10,c=7,ec=1.0) wins in 69 moves (14.1s)  | nettlesome: 13 moments, opp-found-top=4/13 (31%), avg-cost=0.33p, avg-gap=0.52p
+  [G6/10] W=Maia1900 vs B=Nettlesome(d=10,c=7,ec=1.0)
+    [G6/10] starting
+    [G6/10] ply   2 B: Nc6 [N! cost=0.26 gap=0.10]
+    [G6/10] ply  12 B: Nxd4
+    [G6/10] ply  22 B: f5
+    [G6/10] ply  26 B: Bc5+ [N! cost=0.71 gap=0.21]
+    [G6/10] ply  28 B: Ke7 [N! cost=0.87 gap=0.83]
+    [G6/10] ply  30 B: Nh6 [N! cost=0.87 gap=1.08]
+    [G6/10] ply  36 B: Kg7 [N! cost=0.37 gap=0.50]
+    [G6/10] ply  38 B: Rf8 [N! cost=0.28 gap=0.35]
+    [G6/10] ply  40 B: Bb4 [N! cost=0.06 gap=0.35]
+    [G6/10] ply  42 B: b5 [N! cost=0.30 gap=0.45]
+    [G6/10] ply  48 B: Rd8 [N! cost=0.23 gap=2.36]
+  Game 6: Nettlesome(d=10,c=7,ec=1.0) wins in 52 moves (10.1s)  | nettlesome: 9 moments, opp-found-top=5/9 (56%), avg-cost=0.44p, avg-gap=0.69p
+  [G7/10] W=Nettlesome(d=10,c=7,ec=1.0) vs B=Maia1900
+    [G7/10] starting
+    [G7/10] ply   5 W: c3 [N! cost=0.71 gap=0.59]
+    [G7/10] ply   7 W: Qb3 [N! cost=0.94 gap=0.95]
+    [G7/10] ply  11 W: Nd2 [N! cost=0.24 gap=0.21]
+    [G7/10] ply  13 W: Bb5 [N! cost=0.29 gap=0.43]
+    [G7/10] ply  15 W: e5 [N! cost=0.39 gap=0.97]
+    [G7/10] ply  17 W: a4 [N! cost=0.18 gap=0.46]
+    [G7/10] ply  19 W: Bxc6 [N! cost=0.55 gap=0.82]
+    [G7/10] ply  21 W: Ba3 [N! cost=0.44 gap=0.42]
+    [G7/10] ply  25 W: Ne2 [N! cost=0.16 gap=0.25]
+    [G7/10] ply  29 W: h4 [N! cost=0.26 gap=0.16]
+    [G7/10] ply  31 W: a5 [N! cost=0.43 gap=0.45]
+    [G7/10] ply  33 W: f4 [N! cost=0.25 gap=0.48]
+    [G7/10] ply  43 W: Nd6
+    [G7/10] ply  45 W: Rgh3 [N! cost=0.50 gap=1.04]
+    [G7/10] ply  49 W: f5 [N! cost=0.12 gap=0.59]
+    [G7/10] ply  59 W: Rxg8
+    [G7/10] ply  61 W: Kd2 [N! cost=0.52 gap=0.41]
+    [G7/10] ply  67 W: Kb3 [N! cost=0.83 gap=1.06]
+    [G7/10] ply  77 W: Kc1
+    [G7/10] ply  81 W: a6 [N! cost=0.87 gap=1.49]
+    [G7/10] ply  91 W: a7
+    [G7/10] ply 101 W: Qa5+
+  Game 7: Nettlesome(d=10,c=7,ec=1.0) wins in 107 moves (14.4s)  | nettlesome: 17 moments, opp-found-top=11/17 (65%), avg-cost=0.45p, avg-gap=0.63p
+  [G8/10] W=Maia1900 vs B=Nettlesome(d=10,c=7,ec=1.0)
+    [G8/10] starting
+    [G8/10] ply   4 B: d5 [N! cost=0.10 gap=0.95]
+    [G8/10] ply   8 B: Bxe5 [N! cost=0.58 gap=2.89]
+    [G8/10] ply  10 B: dxe4 [N! cost=0.28 gap=0.66]
+    [G8/10] ply  14 B: Nc6 [N! cost=0.54 gap=0.56]
+    [G8/10] ply  18 B: Ke7 [N! cost=0.65 gap=0.93]
+    [G8/10] ply  22 B: Re8 [N! cost=0.35 gap=1.46]
+    [G8/10] ply  26 B: a6 [N! cost=0.26 gap=0.76]
+    [G8/10] ply  30 B: e3 [N! cost=0.50 gap=0.75]
+    [G8/10] ply  34 B: Be6 [N! cost=0.95 gap=2.00]
+    [G8/10] ply  38 B: Ke7 [N! cost=0.37 gap=0.68]
+    [G8/10] ply  42 B: Kf6 [N! cost=0.38 gap=1.42]
+    [G8/10] ply  52 B: Kg5
+    [G8/10] ply  62 B: Kd5
+    [G8/10] ply  72 B: Kf4
+    [G8/10] ply  82 B: Kh4
+    [G8/10] ply  92 B: Ke5
+    [G8/10] ply 102 B: Kg4
+    [G8/10] ply 112 B: Kg4
+    [G8/10] ply 122 B: Kb4
+  Game 8: Maia1900 wins in 129 moves (5.9s)  | nettlesome: 11 moments, opp-found-top=8/11 (73%), avg-cost=0.45p, avg-gap=1.19p
+  [G9/10] W=Nettlesome(d=10,c=7,ec=1.0) vs B=Maia1900
+    [G9/10] starting
+    [G9/10] ply   5 W: Nf3 [N! cost=0.60 gap=0.29]
+    [G9/10] ply   7 W: e3 [N! cost=0.75 gap=0.68]
+    [G9/10] ply  13 W: Qc2 [N! cost=0.23 gap=0.67]
+    [G9/10] ply  15 W: Bf4 [N! cost=0.58 gap=0.42]
+    [G9/10] ply  17 W: O-O [N! cost=0.29 gap=0.91]
+    [G9/10] ply  25 W: Ng5 [N! cost=0.33 gap=0.58]
+    [G9/10] ply  27 W: g4 [N! cost=0.22 gap=0.21]
+    [G9/10] ply  37 W: f4
+    [G9/10] ply  47 W: Bxb5
+    [G9/10] ply  49 W: Qe2 [N! cost=0.21 gap=0.36]
+    [G9/10] ply  51 W: Kg2 [N! cost=0.40 gap=0.63]
+    [G9/10] ply  53 W: Rf3 [N! cost=0.93 gap=1.01]
+    [G9/10] ply  63 W: Rf2
+    [G9/10] ply  71 W: Bxc5 [N! cost=0.46 gap=0.83]
+    [G9/10] ply  75 W: h4 [N! cost=0.41 gap=0.58]
+    [G9/10] ply  77 W: Rc2 [N! cost=0.57 gap=0.65]
+    [G9/10] ply  81 W: h5 [N! cost=0.17 gap=0.29]
+    [G9/10] ply  87 W: Bd1 [N! cost=0.39 gap=0.26]
+    [G9/10] ply  89 W: Kf1 [N! cost=0.08 gap=0.28]
+    [G9/10] ply  91 W: Nd4 [N! cost=0.99 gap=0.76]
+    [G9/10] ply  95 W: Ng1 [N! cost=0.60 gap=0.48]
+    [G9/10] ply  99 W: Kd3 [N! cost=0.07 gap=0.61]
+    [G9/10] ply 105 W: Kc2 [N! cost=0.44 gap=0.35]
+    [G9/10] ply 115 W: Kd3 [N! cost=0.70 gap=0.53]
+    [G9/10] ply 125 W: Qa1#
+  Game 9: Nettlesome(d=10,c=7,ec=1.0) wins in 125 moves (17.1s)  | nettlesome: 21 moments, opp-found-top=10/21 (48%), avg-cost=0.45p, avg-gap=0.54p
+  [G10/10] W=Maia1900 vs B=Nettlesome(d=10,c=7,ec=1.0)
+    [G10/10] starting
+    [G10/10] ply   2 B: d5 [N! cost=0.45 gap=0.68]
+    [G10/10] ply   4 B: c6 [N! cost=0.36 gap=0.76]
+    [G10/10] ply  10 B: Nf6 [N! cost=0.10 gap=0.11]
+    [G10/10] ply  14 B: Bc5 [N! cost=0.33 gap=0.20]
+    [G10/10] ply  16 B: h6 [N! cost=0.10 gap=0.20]
+    [G10/10] ply  20 B: Qb6 [N! cost=0.12 gap=0.10]
+    [G10/10] ply  22 B: Be6 [N! cost=0.18 gap=0.11]
+    [G10/10] ply  24 B: Ng4 [N! cost=0.27 gap=0.16]
+    [G10/10] ply  26 B: f5 [N! cost=0.23 gap=0.36]
+    [G10/10] ply  34 B: Qb5 [N! cost=0.62 gap=0.27]
+    [G10/10] ply  44 B: h5 [N! cost=0.25 gap=6.56]
+    [G10/10] ply  46 B: h4 [N! cost=0.76 gap=2.03]
+  Game 10: Nettlesome(d=10,c=7,ec=1.0) wins in 52 moves (12.7s)  | nettlesome: 12 moments, opp-found-top=4/12 (33%), avg-cost=0.31p, avg-gap=0.96p
+
+============================================================
+RESULTS: Nettlesome(d=10,c=7,ec=1.0) vs Maia1900
+============================================================
+  Nettlesome(d=10,c=7,ec=1.0): 9W / 0D / 1L
+  Score: 90.0%
+  Avg game length: 89 moves
+  ---
+  Nettlesome diagnostics across 10 games:
+    moments played:       143 (14.3/game)
+    opp found #1 reply:   73/143 (51%)
+    opp in top-3 reply:   114/143 (80%)
+    avg eval cost paid:   0.40 pawns
+    avg gap 1-2 created:  0.72 pawns
+    rank distribution:    #1=73, #2=31, #3=10, miss=29
+============================================================
+
+============================================================
+MATCHUP: Nettlesome+EV vs Maia
+============================================================
+  [G1/10] W=Nettlesome+EV(d=10,c=7,ec=1.0) vs B=Maia1900
+    [G1/10] starting
+    [G1/10] ply   1 W: Nf3 [N! cost=0.06 gap=0.20]
+    [G1/10] ply  11 W: Be3
+    [G1/10] ply  17 W: h4 [N! cost=0.07 gap=0.35]
+    [G1/10] ply  27 W: Qxe8+ [N! cost=0.80 gap=3.82]
+    [G1/10] ply  29 W: Rg1 [N! cost=0.09 gap=0.31]
+    [G1/10] ply  33 W: Bf4 [N! cost=0.41 gap=0.45]
+    [G1/10] ply  35 W: a4 [N! cost=0.13 gap=0.16]
+    [G1/10] ply  37 W: Rh1 [N! cost=0.36 gap=0.74]
+    [G1/10] ply  39 W: Bd3 [N! cost=0.22 gap=0.42]
+    [G1/10] ply  41 W: Nd5 [N! cost=0.52 gap=0.95]
+    [G1/10] ply  47 W: Rhd1 [N! cost=0.15 gap=0.88]
+    [G1/10] ply  57 W: Rxd4
+    [G1/10] ply  67 W: Rd8#
+  Game 1: Nettlesome+EV(d=10,c=7,ec=1.0) wins in 67 moves (8.6s)  | nettlesome: 10 moments, opp-found-top=4/10 (40%), avg-cost=0.28p, avg-gap=0.83p
+  [G2/10] W=Maia1900 vs B=Nettlesome+EV(d=10,c=7,ec=1.0)
+    [G2/10] starting
+    [G2/10] ply   4 B: Nc6 [N! cost=0.06 gap=0.11]
+    [G2/10] ply  14 B: e5 [N! cost=0.22 gap=0.48]
+    [G2/10] ply  16 B: d5 [N! cost=0.38 gap=2.14]
+    [G2/10] ply  24 B: Bxc3+ [N! cost=0.12 gap=1.38]
+    [G2/10] ply  34 B: Rfd8
+    [G2/10] ply  38 B: Rxd1 [N! cost=0.64 gap=5.27]
+    [G2/10] ply  48 B: Qxc2+
+    [G2/10] ply  52 B: Rc8 [N! cost=0.38 gap=0.41]
+    [G2/10] ply  56 B: Rxc3 [N! cost=0.09 gap=0.52]
+    [G2/10] ply  62 B: Qf6+ [N! cost=0.28 gap=1.30]
+    [G2/10] ply  72 B: Rc4+
+  Game 2: Nettlesome+EV(d=10,c=7,ec=1.0) wins in 76 moves (13.2s)  | nettlesome: 8 moments, opp-found-top=4/8 (50%), avg-cost=0.27p, avg-gap=1.45p
+  [G3/10] W=Nettlesome+EV(d=10,c=7,ec=1.0) vs B=Maia1900
+    [G3/10] starting
+    [G3/10] ply  11 W: e4
+    [G3/10] ply  15 W: g4 [N! cost=0.13 gap=0.33]
+    [G3/10] ply  25 W: h4 [N! cost=0.29 gap=0.74]
+    [G3/10] ply  31 W: Nf5 [N! cost=0.29 gap=0.56]
+    [G3/10] ply  39 W: Bd3 [N! cost=0.61 gap=0.85]
+    [G3/10] ply  45 W: Qh2 [N! cost=0.42 gap=0.63]
+  Game 3: Nettlesome+EV(d=10,c=7,ec=1.0) wins in 47 moves (11.1s)  | nettlesome: 5 moments, opp-found-top=4/5 (80%), avg-cost=0.35p, avg-gap=0.62p
+  [G4/10] W=Maia1900 vs B=Nettlesome+EV(d=10,c=7,ec=1.0)
+    [G4/10] starting
+    [G4/10] ply   2 B: d5 [N! cost=0.35 gap=0.63]
+    [G4/10] ply   4 B: Qxd5 [N! cost=0.08 gap=0.36]
+    [G4/10] ply  14 B: Nbd7
+    [G4/10] ply  16 B: Bh5 [N! cost=0.49 gap=0.81]
+    [G4/10] ply  26 B: Nd5
+    [G4/10] ply  36 B: Rac8 [N! cost=0.14 gap=0.18]
+    [G4/10] ply  38 B: Ne7 [N! cost=0.21 gap=0.34]
+    [G4/10] ply  40 B: Ra8 [N! cost=0.10 gap=0.15]
+    [G4/10] ply  46 B: Nd5 [N! cost=0.06 gap=0.10]
+    [G4/10] ply  48 B: Kf8 [N! cost=0.35 gap=0.78]
+    [G4/10] ply  58 B: Rxd4
+  Game 4: Nettlesome+EV(d=10,c=7,ec=1.0) wins in 60 moves (14.7s)  | nettlesome: 8 moments, opp-found-top=4/8 (50%), avg-cost=0.22p, avg-gap=0.42p
+  [G5/10] W=Nettlesome+EV(d=10,c=7,ec=1.0) vs B=Maia1900
+    [G5/10] starting
+    [G5/10] ply   5 W: c3 [N! cost=0.31 gap=0.51]
+    [G5/10] ply   7 W: Qc2 [N! cost=0.13 gap=0.17]
+    [G5/10] ply  13 W: Nc3 [N! cost=0.12 gap=0.62]
+    [G5/10] ply  19 W: Bb5 [N! cost=0.33 gap=0.49]
+    [G5/10] ply  21 W: O-O [N! cost=0.41 gap=0.64]
+    [G5/10] ply  31 W: Rfc1
+    [G5/10] ply  35 W: dxe6 [N! cost=0.57 gap=1.57]
+    [G5/10] ply  37 W: Rc7 [N! cost=0.23 gap=0.27]
+    [G5/10] ply  39 W: Rxd7 [N! cost=0.09 gap=1.29]
+    [G5/10] ply  47 W: f4 [N! cost=0.27 gap=0.55]
+    [G5/10] ply  53 W: f5 [N! cost=0.17 gap=0.18]
+    [G5/10] ply  61 W: Rf6+ [N! cost=0.23 gap=2.95]
+    [G5/10] ply  63 W: Rh6+ [N! cost=0.95 gap=3.17]
+    [G5/10] ply  65 W: Qg2+ [N! cost=0.48 gap=3.14]
+    [G5/10] ply  67 W: f4 [N! cost=0.71 gap=1.14]
+  Game 5: Nettlesome+EV(d=10,c=7,ec=1.0) wins in 75 moves (9.6s)  | nettlesome: 14 moments, opp-found-top=7/14 (50%), avg-cost=0.36p, avg-gap=1.19p
+  [G6/10] W=Maia1900 vs B=Nettlesome+EV(d=10,c=7,ec=1.0)
+    [G6/10] starting
+    [G6/10] ply  11 W: a3
+    [G6/10] ply  14 B: Nc6 [N! cost=0.12 gap=0.19]
+    [G6/10] ply  16 B: Na5 [N! cost=0.19 gap=0.55]
+    [G6/10] ply  18 B: Nf6 [N! cost=0.13 gap=0.29]
+    [G6/10] ply  20 B: h5 [N! cost=0.22 gap=0.40]
+    [G6/10] ply  30 B: Bc5 [N! cost=0.42 gap=1.27]
+    [G6/10] ply  38 B: Rg8 [N! cost=0.25 gap=0.35]
+    [G6/10] ply  48 B: Nh4
+    [G6/10] ply  50 B: Kd8 [N! cost=0.15 gap=0.69]
+    [G6/10] ply  52 B: Qc3 [N! cost=0.38 gap=0.57]
+    [G6/10] ply  62 B: Qxf1#
+  Game 6: Nettlesome+EV(d=10,c=7,ec=1.0) wins in 62 moves (10.1s)  | nettlesome: 8 moments, opp-found-top=1/8 (12%), avg-cost=0.23p, avg-gap=0.54p
+  [G7/10] W=Nettlesome+EV(d=10,c=7,ec=1.0) vs B=Maia1900
+    [G7/10] starting
+    [G7/10] ply  11 W: c4
+    [G7/10] ply  21 W: f3 [N! cost=0.17 gap=0.21]
+    [G7/10] ply  23 W: Nd5 [N! cost=0.34 gap=0.75]
+    [G7/10] ply  25 W: cxd5 [N! cost=0.08 gap=1.06]
+    [G7/10] ply  27 W: Nc3 [N! cost=0.06 gap=0.29]
+    [G7/10] ply  37 W: Ne4
+    [G7/10] ply  39 W: Qb4 [N! cost=0.06 gap=0.14]
+    [G7/10] ply  45 W: Rab1 [N! cost=0.06 gap=0.25]
+    [G7/10] ply  55 W: Qxf3
+    [G7/10] ply  59 W: Rc1 [N! cost=0.08 gap=0.16]
+    [G7/10] ply  61 W: Qd7 [N! cost=0.27 gap=0.47]
+    [G7/10] ply  63 W: Rc8+ [N! cost=0.21 gap=4.02]
+  Game 7: Nettlesome+EV(d=10,c=7,ec=1.0) wins in 71 moves (13.2s)  | nettlesome: 9 moments, opp-found-top=2/9 (22%), avg-cost=0.15p, avg-gap=0.82p
+  [G8/10] W=Maia1900 vs B=Nettlesome+EV(d=10,c=7,ec=1.0)
+    [G8/10] starting
+    [G8/10] ply  11 W: Be3
+    [G8/10] ply  21 W: Na4
+    [G8/10] ply  22 B: Qb4+ [N! cost=0.17 gap=2.79]
+    [G8/10] ply  32 B: h4
+    [G8/10] ply  42 B: Qg6
+    [G8/10] ply  50 B: Rb8 [N! cost=0.29 gap=0.52]
+  Game 8: Nettlesome+EV(d=10,c=7,ec=1.0) wins in 56 moves (9.8s)  | nettlesome: 2 moments, opp-found-top=1/2 (50%), avg-cost=0.23p, avg-gap=1.66p
+  [G9/10] W=Nettlesome+EV(d=10,c=7,ec=1.0) vs B=Maia1900
+    [G9/10] starting
+    [G9/10] ply  11 W: Be3
+    [G9/10] ply  15 W: f4 [N! cost=0.19 gap=0.26]
+    [G9/10] ply  25 W: Rhg1 [N! cost=0.16 gap=0.42]
+    [G9/10] ply  35 W: h5
+    [G9/10] ply  41 W: Rg2 [N! cost=0.42 gap=1.03]
+    [G9/10] ply  45 W: Bxc4 [N! cost=0.41 gap=0.85]
+    [G9/10] ply  49 W: Re1 [N! cost=0.53 gap=0.81]
+    [G9/10] ply  51 W: Nd2 [N! cost=0.34 gap=0.46]
+    [G9/10] ply  59 W: Qa1 [N! cost=0.73 gap=1.14]
+  Game 9: Nettlesome+EV(d=10,c=7,ec=1.0) wins in 65 moves (13.6s)  | nettlesome: 7 moments, opp-found-top=2/7 (29%), avg-cost=0.40p, avg-gap=0.71p
+  [G10/10] W=Maia1900 vs B=Nettlesome+EV(d=10,c=7,ec=1.0)
+    [G10/10] starting
+    [G10/10] ply   6 B: Nxe4 [N! cost=0.29 gap=0.72]
+    [G10/10] ply   8 B: d5 [N! cost=0.30 gap=1.22]
+    [G10/10] ply  18 B: Bf5 [N! cost=0.19 gap=0.24]
+    [G10/10] ply  26 B: Bxf3 [N! cost=0.74 gap=4.10]
+    [G10/10] ply  28 B: Nc6 [N! cost=0.23 gap=0.34]
+    [G10/10] ply  38 B: Rfb8
+    [G10/10] ply  42 B: Rc8 [N! cost=0.27 gap=0.50]
+    [G10/10] ply  52 B: Rxd1+
+    [G10/10] ply  54 B: Rg8 [N! cost=0.13 gap=0.28]
+    [G10/10] ply  60 B: f5 [N! cost=0.10 gap=0.15]
+    [G10/10] ply  70 B: c5 [N! cost=0.07 gap=0.29]
+    [G10/10] ply  80 B: Ra3
+    [G10/10] ply  82 B: Rb3 [N! cost=0.23 gap=0.29]
+    [G10/10] ply  84 B: Rd3 [N! cost=0.12 gap=0.39]
+    [G10/10] ply  86 B: Ke4 [N! cost=0.10 gap=0.47]
+    [G10/10] ply  90 B: Re3 [N! cost=0.10 gap=0.29]
+    [G10/10] ply 100 B: Ra1#
+  Game 10: Nettlesome+EV(d=10,c=7,ec=1.0) wins in 100 moves (14.1s)  | nettlesome: 13 moments, opp-found-top=3/13 (23%), avg-cost=0.22p, avg-gap=0.71p
+
+============================================================
+RESULTS: Nettlesome+EV(d=10,c=7,ec=1.0) vs Maia1900
+============================================================
+  Nettlesome+EV(d=10,c=7,ec=1.0): 10W / 0D / 0L
+  Score: 100.0%
+  Avg game length: 68 moves
+  ---
+  Nettlesome diagnostics across 10 games:
+    moments played:       84 (8.4/game)
+    opp found #1 reply:   32/84 (38%)
+    opp in top-3 reply:   51/84 (61%)
+    avg eval cost paid:   0.27 pawns
+    avg gap 1-2 created:  0.86 pawns
+    rank distribution:    #1=32, #2=8, #3=11, miss=33
+============================================================
+
+============================================================
+MATCHUP: NettlesomeTight vs Maia
+============================================================
+  [G1/10] W=NettlesomeTight(d=10,c=7,ec=0.3) vs B=Maia1900
+    [G1/10] starting
+    [G1/10] ply   3 W: d4 [N! cost=0.26 gap=0.50]
+    [G1/10] ply  13 W: Bg5
+    [G1/10] ply  15 W: Bxf6 [N! cost=0.25 gap=2.85]
+    [G1/10] ply  21 W: exf5 [N! cost=0.24 gap=1.03]
+    [G1/10] ply  31 W: Qxf5
+  Game 1: NettlesomeTight(d=10,c=7,ec=0.3) wins in 33 moves (3.7s)  | nettlesome: 3 moments, opp-found-top=3/3 (100%), avg-cost=0.25p, avg-gap=1.46p
+  [G2/10] W=Maia1900 vs B=NettlesomeTight(d=10,c=7,ec=0.3)
+    [G2/10] starting
+    [G2/10] ply   2 B: e5 [N! cost=0.13 gap=0.17]
+    [G2/10] ply   6 B: Be7 [N! cost=0.12 gap=0.19]
+    [G2/10] ply  16 B: Qd6
+    [G2/10] ply  18 B: O-O [N! cost=0.26 gap=1.03]
+    [G2/10] ply  20 B: Qxd1+ [N! cost=0.30 gap=6.83]
+    [G2/10] ply  30 B: Bb4
+    [G2/10] ply  40 B: Bc6
+    [G2/10] ply  42 B: a5 [N! cost=0.10 gap=0.25]
+    [G2/10] ply  46 B: Rad8 [N! cost=0.20 gap=0.28]
+    [G2/10] ply  52 B: Rxg2+ [N! cost=0.08 gap=3.76]
+    [G2/10] ply  56 B: Rc2 [N! cost=0.25 gap=0.31]
+    [G2/10] ply  62 B: Kf7 [N! cost=0.10 gap=0.23]
+    [G2/10] ply  72 B: Rxb4
+    [G2/10] ply  74 B: Rb3+ [N! cost=0.24 gap=0.26]
+  Game 2: NettlesomeTight(d=10,c=7,ec=0.3) wins in 78 moves (5.8s)  | nettlesome: 10 moments, opp-found-top=5/10 (50%), avg-cost=0.18p, avg-gap=1.33p
+  [G3/10] W=NettlesomeTight(d=10,c=7,ec=0.3) vs B=Maia1900
+    [G3/10] starting
+    [G3/10] ply   1 W: c4 [N! cost=0.30 gap=0.19]
+    [G3/10] ply  11 W: a3 [N! cost=0.28 gap=0.53]
+    [G3/10] ply  21 W: Qc4 [N! cost=0.05 gap=0.88]
+    [G3/10] ply  23 W: Qd3 [N! cost=0.17 gap=0.06]
+    [G3/10] ply  33 W: Bxg5
+    [G3/10] ply  41 W: Rac1 [N! cost=0.11 gap=0.18]
+    [G3/10] ply  51 W: Rxc7
+    [G3/10] ply  55 W: e5 [N! cost=0.14 gap=0.64]
+    [G3/10] ply  57 W: Rxa7 [N! cost=0.19 gap=0.26]
+    [G3/10] ply  67 W: Bb4#
+  Game 3: NettlesomeTight(d=10,c=7,ec=0.3) wins in 67 moves (10.6s)  | nettlesome: 7 moments, opp-found-top=4/7 (57%), avg-cost=0.18p, avg-gap=0.39p
+  [G4/10] W=Maia1900 vs B=NettlesomeTight(d=10,c=7,ec=0.3)
+    [G4/10] starting
+    [G4/10] ply   2 B: d6 [N! cost=0.30 gap=0.33]
+    [G4/10] ply   8 B: a6 [N! cost=0.19 gap=0.16]
+    [G4/10] ply  18 B: hxg5
+    [G4/10] ply  28 B: Nxd1
+    [G4/10] ply  32 B: e6 [N! cost=0.17 gap=0.30]
+    [G4/10] ply  42 B: Ra8 [N! cost=0.19 gap=0.27]
+    [G4/10] ply  48 B: Rxg5 [N! cost=0.20 gap=0.82]
+    [G4/10] ply  56 B: Re4+ [N! cost=0.21 gap=0.50]
+    [G4/10] ply  62 B: Rc5 [N! cost=0.24 gap=0.44]
+    [G4/10] ply  66 B: Rg5 [N! cost=0.15 gap=0.26]
+    [G4/10] ply  68 B: Rxg6 [N! cost=0.06 gap=0.25]
+    [G4/10] ply  70 B: Kf7 [N! cost=0.10 gap=0.30]
+    [G4/10] ply  72 B: Rg3+ [N! cost=0.13 gap=0.50]
+    [G4/10] ply  82 B: Ke7 [N! cost=0.13 gap=0.37]
+    [G4/10] ply  86 B: Rb3 [N! cost=0.06 gap=0.27]
+    [G4/10] ply  96 B: Kf6
+    [G4/10] ply 102 B: Kf6 [N! cost=0.18 gap=0.89]
+  Game 4: NettlesomeTight(d=10,c=7,ec=0.3) wins in 108 moves (8.2s)  | nettlesome: 14 moments, opp-found-top=6/14 (43%), avg-cost=0.17p, avg-gap=0.40p
+  [G5/10] W=NettlesomeTight(d=10,c=7,ec=0.3) vs B=Maia1900
+    [G5/10] starting
+    [G5/10] ply  11 W: Qe2
+    [G5/10] ply  21 W: c4
+    [G5/10] ply  23 W: h4 [N! cost=0.19 gap=0.38]
+    [G5/10] ply  25 W: h5 [N! cost=0.07 gap=0.23]
+    [G5/10] ply  29 W: Rg3 [N! cost=0.06 gap=0.72]
+    [G5/10] ply  33 W: Bf4 [N! cost=0.14 gap=0.89]
+    [G5/10] ply  35 W: Kf1 [N! cost=0.09 gap=0.35]
+    [G5/10] ply  41 W: Nd6 [N! cost=0.08 gap=0.39]
+    [G5/10] ply  51 W: Bxe5
+    [G5/10] ply  57 W: Qh3 [N! cost=0.20 gap=0.20]
+    [G5/10] ply  67 W: d7
+  Game 5: NettlesomeTight(d=10,c=7,ec=0.3) wins in 75 moves (9.7s)  | nettlesome: 7 moments, opp-found-top=3/7 (43%), avg-cost=0.12p, avg-gap=0.45p
+  [G6/10] W=Maia1900 vs B=NettlesomeTight(d=10,c=7,ec=0.3)
+    [G6/10] starting
+    [G6/10] ply   4 B: d6 [N! cost=0.25 gap=0.22]
+    [G6/10] ply  10 B: Qxd6 [N! cost=0.22 gap=0.35]
+    [G6/10] ply  18 B: Be6 [N! cost=0.25 gap=0.23]
+    [G6/10] ply  28 B: Bg4
+    [G6/10] ply  34 B: Ra5 [N! cost=0.10 gap=0.16]
+    [G6/10] ply  42 B: Rd4 [N! cost=0.07 gap=0.33]
+    [G6/10] ply  48 B: h6 [N! cost=0.08 gap=0.27]
+    [G6/10] ply  50 B: a6 [N! cost=0.11 gap=0.41]
+    [G6/10] ply  54 B: Re7+ [N! cost=0.08 gap=0.30]
+    [G6/10] ply  64 B: h5
+    [G6/10] ply  68 B: Re2 [N! cost=0.26 gap=0.48]
+    [G6/10] ply  78 B: Rb5#
+  Game 6: NettlesomeTight(d=10,c=7,ec=0.3) wins in 78 moves (7.6s)  | nettlesome: 9 moments, opp-found-top=4/9 (44%), avg-cost=0.16p, avg-gap=0.31p
+  [G7/10] W=NettlesomeTight(d=10,c=7,ec=0.3) vs B=Maia1900
+    [G7/10] starting
+    [G7/10] ply   1 W: c4 [N! cost=0.21 gap=0.20]
+    [G7/10] ply   3 W: Nf3 [N! cost=0.21 gap=0.17]
+    [G7/10] ply   5 W: d3 [N! cost=0.11 gap=0.13]
+    [G7/10] ply   7 W: a3 [N! cost=0.08 gap=0.23]
+    [G7/10] ply  11 W: e3 [N! cost=0.10 gap=0.10]
+    [G7/10] ply  13 W: b4 [N! cost=0.18 gap=0.59]
+    [G7/10] ply  19 W: Be2 [N! cost=0.07 gap=0.30]
+    [G7/10] ply  21 W: Ne4 [N! cost=0.18 gap=0.36]
+    [G7/10] ply  31 W: Qc2
+  Game 7: NettlesomeTight(d=10,c=7,ec=0.3) wins in 39 moves (6.5s)  | nettlesome: 8 moments, opp-found-top=3/8 (38%), avg-cost=0.14p, avg-gap=0.26p
+  [G8/10] W=Maia1900 vs B=NettlesomeTight(d=10,c=7,ec=0.3)
+    [G8/10] starting
+    [G8/10] ply   4 B: d6 [N! cost=0.19 gap=0.13]
+    [G8/10] ply  12 B: O-O [N! cost=0.06 gap=0.10]
+    [G8/10] ply  20 B: Na6 [N! cost=0.24 gap=0.29]
+    [G8/10] ply  30 B: Qh4
+    [G8/10] ply  40 B: Bg4
+    [G8/10] ply  42 B: Ra4 [N! cost=0.13 gap=0.43]
+    [G8/10] ply  46 B: Bf5 [N! cost=0.19 gap=0.18]
+    [G8/10] ply  48 B: Ra8 [N! cost=0.09 gap=0.40]
+    [G8/10] ply  50 B: Bd7 [N! cost=0.17 gap=0.30]
+    [G8/10] ply  52 B: Re2 [N! cost=0.18 gap=0.56]
+    [G8/10] ply  60 B: Be4 [N! cost=0.12 gap=0.06]
+    [G8/10] ply  64 B: Bf8 [N! cost=0.13 gap=0.09]
+    [G8/10] ply  70 B: Bxh3 [N! cost=0.21 gap=0.12]
+    [G8/10] ply  80 B: Nb6
+    [G8/10] ply  82 B: Nd5 [N! cost=0.25 gap=0.15]
+    [G8/10] ply  92 B: hxg3+
+    [G8/10] ply  96 B: Bxf4 [N! cost=0.21 gap=2.16]
+    [G8/10] ply 100 B: Rxa4 [N! cost=0.23 gap=0.50]
+  Game 8: NettlesomeTight(d=10,c=7,ec=0.3) wins in 108 moves (9.6s)  | nettlesome: 14 moments, opp-found-top=6/14 (43%), avg-cost=0.17p, avg-gap=0.39p
+  [G9/10] W=NettlesomeTight(d=10,c=7,ec=0.3) vs B=Maia1900
+    [G9/10] starting
+    [G9/10] ply   1 W: Nc3 [N! cost=0.30 gap=0.26]
+    [G9/10] ply  11 W: h3 [N! cost=0.29 gap=0.27]
+    [G9/10] ply  21 W: Bxc6 [N! cost=0.23 gap=5.36]
+    [G9/10] ply  23 W: Re1 [N! cost=0.12 gap=0.29]
+    [G9/10] ply  25 W: b3 [N! cost=0.13 gap=0.61]
+    [G9/10] ply  31 W: Rc1 [N! cost=0.19 gap=0.13]
+    [G9/10] ply  35 W: Bxd4 [N! cost=0.15 gap=4.15]
+  Game 9: NettlesomeTight(d=10,c=7,ec=0.3) wins in 41 moves (7.0s)  | nettlesome: 7 moments, opp-found-top=4/7 (57%), avg-cost=0.20p, avg-gap=1.58p
+  [G10/10] W=Maia1900 vs B=NettlesomeTight(d=10,c=7,ec=0.3)
+    [G10/10] starting
+    [G10/10] ply   2 B: Nc6 [N! cost=0.22 gap=0.20]
+    [G10/10] ply  12 B: Bb4+
+    [G10/10] ply  22 B: Bf5
+    [G10/10] ply  32 B: Nd6
+    [G10/10] ply  38 B: c6 [N! cost=0.13 gap=0.08]
+    [G10/10] ply  40 B: Rxe2 [N! cost=0.08 gap=0.14]
+    [G10/10] ply  50 B: Qa3
+  Game 10: NettlesomeTight(d=10,c=7,ec=0.3) wins in 56 moves (5.3s)  | nettlesome: 3 moments, opp-found-top=0/3 (0%), avg-cost=0.14p, avg-gap=0.14p
+
+============================================================
+RESULTS: NettlesomeTight(d=10,c=7,ec=0.3) vs Maia1900
+============================================================
+  NettlesomeTight(d=10,c=7,ec=0.3): 10W / 0D / 0L
+  Score: 100.0%
+  Avg game length: 68 moves
+  ---
+  Nettlesome diagnostics across 10 games:
+    moments played:       82 (8.2/game)
+    opp found #1 reply:   38/82 (46%)
+    opp in top-3 reply:   64/82 (78%)
+    avg eval cost paid:   0.17 pawns
+    avg gap 1-2 created:  0.62 pawns
+    rank distribution:    #1=38, #2=18, #3=8, miss=18
+============================================================
+
+============================================================
+MATCHUP: NettlesomeTight+EV vs Maia
+============================================================
+  [G1/10] W=NettlesomeTight+EV(d=10,c=7,ec=0.3) vs B=Maia1900
+    [G1/10] starting
+    [G1/10] ply  11 W: f3
+    [G1/10] ply  17 W: Be2 [N! cost=0.05 gap=0.07]
+    [G1/10] ply  21 W: Qd3 [N! cost=0.11 gap=0.37]
+    [G1/10] ply  23 W: Qe3 [N! cost=0.14 gap=0.24]
+    [G1/10] ply  33 W: Bxe5
+    [G1/10] ply  39 W: c3 [N! cost=0.28 gap=0.31]
+    [G1/10] ply  49 W: Qg8#
+  Game 1: NettlesomeTight+EV(d=10,c=7,ec=0.3) wins in 49 moves (8.8s)  | nettlesome: 4 moments, opp-found-top=1/4 (25%), avg-cost=0.15p, avg-gap=0.25p
+  [G2/10] W=Maia1900 vs B=NettlesomeTight+EV(d=10,c=7,ec=0.3)
+    [G2/10] starting
+    [G2/10] ply  11 W: Bc4
+    [G2/10] ply  12 B: Qc6 [N! cost=0.11 gap=0.21]
+    [G2/10] ply  20 B: Be7 [N! cost=0.24 gap=0.36]
+    [G2/10] ply  22 B: Nc6 [N! cost=0.06 gap=0.87]
+    [G2/10] ply  24 B: Na5 [N! cost=0.24 gap=0.33]
+    [G2/10] ply  26 B: Nc4 [N! cost=0.07 gap=0.24]
+    [G2/10] ply  28 B: Na5 [N! cost=0.16 gap=0.52]
+    [G2/10] ply  36 B: Qb6 [N! cost=0.15 gap=0.30]
+    [G2/10] ply  42 B: h5 [N! cost=0.21 gap=0.40]
+    [G2/10] ply  52 B: Qc7
+    [G2/10] ply  62 B: Ke7
+    [G2/10] ply  66 B: Kf6 [N! cost=0.07 gap=0.12]
+    [G2/10] ply  76 B: Kxg5
+    [G2/10] ply  86 B: Bb8
+    [G2/10] ply  92 B: Bf4 [N! cost=0.09 gap=0.37]
+    [G2/10] ply 102 B: Bg3
+    [G2/10] ply 112 B: Kg3
+    [G2/10] ply 122 B: Kh2
+    [G2/10] ply 130 B: Kh6 [N! cost=0.05 gap=2.03]
+    [G2/10] ply 140 B: Kh8
+  Game 2: Draw in 141 moves (19.1s)  | nettlesome: 11 moments, opp-found-top=5/11 (45%), avg-cost=0.13p, avg-gap=0.52p
+  [G3/10] W=NettlesomeTight+EV(d=10,c=7,ec=0.3) vs B=Maia1900
+    [G3/10] starting
+    [G3/10] ply  11 W: Be2
+    [G3/10] ply  13 W: Nf3 [N! cost=0.10 gap=0.22]
+    [G3/10] ply  23 W: Ne3
+    [G3/10] ply  31 W: b4 [N! cost=0.29 gap=0.34]
+    [G3/10] ply  33 W: c3 [N! cost=0.08 gap=0.17]
+    [G3/10] ply  43 W: exf5
+    [G3/10] ply  49 W: Rfa1 [N! cost=0.09 gap=0.39]
+    [G3/10] ply  53 W: b7 [N! cost=0.20 gap=0.82]
+  Game 3: NettlesomeTight+EV(d=10,c=7,ec=0.3) wins in 61 moves (9.3s)  | nettlesome: 5 moments, opp-found-top=1/5 (20%), avg-cost=0.15p, avg-gap=0.39p
+  [G4/10] W=Maia1900 vs B=NettlesomeTight+EV(d=10,c=7,ec=0.3)
+    [G4/10] starting
+    [G4/10] ply  10 B: a5 [N! cost=0.20 gap=0.30]
+    [G4/10] ply  16 B: Be6 [N! cost=0.08 gap=0.10]
+    [G4/10] ply  20 B: Nd7 [N! cost=0.07 gap=0.30]
+    [G4/10] ply  24 B: Kh8 [N! cost=0.18 gap=0.56]
+    [G4/10] ply  28 B: Bb8 [N! cost=0.19 gap=0.36]
+    [G4/10] ply  30 B: exd4 [N! cost=0.11 gap=0.29]
+    [G4/10] ply  40 B: Ba7
+    [G4/10] ply  46 B: Nxd3 [N! cost=0.26 gap=4.16]
+    [G4/10] ply  56 B: Re2
+    [G4/10] ply  58 B: Rxd2 [N! cost=0.05 gap=5.58]
+    [G4/10] ply  64 B: Kh7 [N! cost=0.14 gap=0.49]
+    [G4/10] ply  74 B: Rc5
+    [G4/10] ply  84 B: Kf8
+    [G4/10] ply  94 B: Ke7
+    [G4/10] ply 104 B: Rc4
+    [G4/10] ply 114 B: Kxf4
+    [G4/10] ply 124 B: g4
+    [G4/10] ply 134 B: Qg7+
+  Game 4: NettlesomeTight+EV(d=10,c=7,ec=0.3) wins in 138 moves (17.4s)  | nettlesome: 9 moments, opp-found-top=8/9 (89%), avg-cost=0.14p, avg-gap=1.35p
+  [G5/10] W=NettlesomeTight+EV(d=10,c=7,ec=0.3) vs B=Maia1900
+    [G5/10] starting
+    [G5/10] ply   1 W: c4 [N! cost=0.17 gap=0.21]
+    [G5/10] ply   7 W: Nf3 [N! cost=0.06 gap=0.16]
+    [G5/10] ply  17 W: e4 [N! cost=0.05 gap=0.26]
+    [G5/10] ply  19 W: Nc3 [N! cost=0.20 gap=0.55]
+    [G5/10] ply  29 W: g5
+    [G5/10] ply  39 W: Bf3
+    [G5/10] ply  41 W: Re1 [N! cost=0.10 gap=0.54]
+    [G5/10] ply  51 W: Rxa6
+  Game 5: NettlesomeTight+EV(d=10,c=7,ec=0.3) wins in 57 moves (5.7s)  | nettlesome: 5 moments, opp-found-top=1/5 (20%), avg-cost=0.12p, avg-gap=0.34p
+  [G6/10] W=Maia1900 vs B=NettlesomeTight+EV(d=10,c=7,ec=0.3)
+    [G6/10] starting
+    [G6/10] ply   2 B: c6 [N! cost=0.06 gap=0.15]
+    [G6/10] ply  12 B: Bg4
+    [G6/10] ply  22 B: Rc8
+    [G6/10] ply  24 B: Nd5 [N! cost=0.10 gap=0.18]
+    [G6/10] ply  28 B: a6 [N! cost=0.17 gap=0.41]
+    [G6/10] ply  38 B: cxd3
+    [G6/10] ply  48 B: Qxd5
+    [G6/10] ply  52 B: f6 [N! cost=0.18 gap=0.55]
+    [G6/10] ply  54 B: f5 [N! cost=0.14 gap=0.17]
+    [G6/10] ply  64 B: Re4
+    [G6/10] ply  74 B: Qxh3#
+  Game 6: NettlesomeTight+EV(d=10,c=7,ec=0.3) wins in 74 moves (8.0s)  | nettlesome: 5 moments, opp-found-top=2/5 (40%), avg-cost=0.13p, avg-gap=0.29p
+  [G7/10] W=NettlesomeTight+EV(d=10,c=7,ec=0.3) vs B=Maia1900
+    [G7/10] starting
+    [G7/10] ply   7 W: Be2 [N! cost=0.07 gap=0.24]
+    [G7/10] ply   9 W: Qc2 [N! cost=0.15 gap=0.35]
+    [G7/10] ply  19 W: Qxb4
+    [G7/10] ply  23 W: Qd4 [N! cost=0.30 gap=0.37]
+    [G7/10] ply  25 W: a3 [N! cost=0.16 gap=0.56]
+    [G7/10] ply  27 W: Nc3 [N! cost=0.15 gap=0.62]
+    [G7/10] ply  37 W: Nbd2
+    [G7/10] ply  39 W: Qb3 [N! cost=0.23 gap=0.50]
+    [G7/10] ply  47 W: Nd2 [N! cost=0.20 gap=0.23]
+    [G7/10] ply  51 W: Ra4 [N! cost=0.16 gap=0.27]
+    [G7/10] ply  61 W: Qxe8+
+    [G7/10] ply  63 W: Bd4+ [N! cost=0.09 gap=1.92]
+    [G7/10] ply  73 W: Be3
+  Game 7: NettlesomeTight+EV(d=10,c=7,ec=0.3) wins in 77 moves (5.8s)  | nettlesome: 9 moments, opp-found-top=4/9 (44%), avg-cost=0.17p, avg-gap=0.56p
+  [G8/10] W=Maia1900 vs B=NettlesomeTight+EV(d=10,c=7,ec=0.3)
+    [G8/10] starting
+    [G8/10] ply  11 W: Bd3
+    [G8/10] ply  14 B: Bd6 [N! cost=0.21 gap=0.29]
+    [G8/10] ply  18 B: c6 [N! cost=0.20 gap=0.25]
+    [G8/10] ply  24 B: h6 [N! cost=0.10 gap=0.26]
+    [G8/10] ply  28 B: Nd7 [N! cost=0.16 gap=0.39]
+    [G8/10] ply  30 B: Qc7 [N! cost=0.12 gap=0.32]
+    [G8/10] ply  40 B: Rae8 [N! cost=0.18 gap=0.26]
+    [G8/10] ply  44 B: Re4 [N! cost=0.24 gap=0.62]
+    [G8/10] ply  54 B: Bd6 [N! cost=0.10 gap=0.16]
+    [G8/10] ply  64 B: Rxf4
+    [G8/10] ply  74 B: Rf4
+    [G8/10] ply  80 B: Rf7 [N! cost=0.07 gap=0.23]
+    [G8/10] ply  82 B: Rf4 [N! cost=0.07 gap=0.96]
+    [G8/10] ply  84 B: Bc5 [N! cost=0.10 gap=0.16]
+    [G8/10] ply  86 B: Rf8 [N! cost=0.10 gap=0.34]
+    [G8/10] ply  94 B: a5 [N! cost=0.08 gap=0.18]
+    [G8/10] ply  96 B: Be7 [N! cost=0.17 gap=0.21]
+  Game 8: NettlesomeTight+EV(d=10,c=7,ec=0.3) wins in 102 moves (11.2s)  | nettlesome: 14 moments, opp-found-top=2/14 (14%), avg-cost=0.14p, avg-gap=0.33p
+  [G9/10] W=NettlesomeTight+EV(d=10,c=7,ec=0.3) vs B=Maia1900
+    [G9/10] starting
+    [G9/10] ply  11 W: d3
+    [G9/10] ply  21 W: Bh4
+    [G9/10] ply  31 W: Nb6 [N! cost=0.26 gap=0.64]
+    [G9/10] ply  41 W: exd5
+    [G9/10] ply  45 W: Ra1 [N! cost=0.12 gap=0.31]
+    [G9/10] ply  55 W: Nf5+
+  Game 9: NettlesomeTight+EV(d=10,c=7,ec=0.3) wins in 59 moves (10.7s)  | nettlesome: 2 moments, opp-found-top=1/2 (50%), avg-cost=0.19p, avg-gap=0.47p
+  [G10/10] W=Maia1900 vs B=NettlesomeTight+EV(d=10,c=7,ec=0.3)
+    [G10/10] starting
+    [G10/10] ply   2 B: d5 [N! cost=0.24 gap=0.84]
+    [G10/10] ply   4 B: Qxd5 [N! cost=0.05 gap=0.29]
+    [G10/10] ply  14 B: a6 [N! cost=0.05 gap=0.07]
+    [G10/10] ply  24 B: Bb7
+    [G10/10] ply  30 B: Nxe5 [N! cost=0.08 gap=2.30]
+    [G10/10] ply  40 B: Qxe5
+  Game 10: NettlesomeTight+EV(d=10,c=7,ec=0.3) wins in 48 moves (8.1s)  | nettlesome: 4 moments, opp-found-top=3/4 (75%), avg-cost=0.10p, avg-gap=0.88p
+
+============================================================
+RESULTS: NettlesomeTight+EV(d=10,c=7,ec=0.3) vs Maia1900
+============================================================
+  NettlesomeTight+EV(d=10,c=7,ec=0.3): 9W / 1D / 0L
+  Score: 95.0%
+  Avg game length: 81 moves
+  ---
+  Nettlesome diagnostics across 10 games:
+    moments played:       68 (6.8/game)
+    opp found #1 reply:   28/68 (41%)
+    opp in top-3 reply:   47/68 (69%)
+    avg eval cost paid:   0.14 pawns
+    avg gap 1-2 created:  0.56 pawns
+    rank distribution:    #1=28, #2=14, #3=5, miss=21
+============================================================
+
+============================================================
+MATCHUP: PureStockfish vs Maia
+============================================================
+  [G1/10] W=PureStockfish(d=10) vs B=Maia1900
+    [G1/10] starting
+    [G1/10] ply  11 W: h3
+    [G1/10] ply  21 W: Qxe2
+    [G1/10] ply  31 W: Rfd1
+    [G1/10] ply  41 W: Kh2
+    [G1/10] ply  51 W: Rd8+
+  Game 1: PureStockfish(d=10) wins in 53 moves (0.5s)
+  [G2/10] W=Maia1900 vs B=PureStockfish(d=10)
+    [G2/10] starting
+    [G2/10] ply  11 W: Be2
+    [G2/10] ply  21 W: Bxf4
+    [G2/10] ply  31 W: Rb1
+    [G2/10] ply  41 W: gxf3
+  Game 2: PureStockfish(d=10) wins in 50 moves (0.4s)
+  [G3/10] W=PureStockfish(d=10) vs B=Maia1900
+    [G3/10] starting
+    [G3/10] ply  11 W: dxc5
+    [G3/10] ply  21 W: Bb2
+    [G3/10] ply  31 W: Bc4
+    [G3/10] ply  41 W: Bxd7
+    [G3/10] ply  51 W: cxd6+
+    [G3/10] ply  61 W: exf5
+    [G3/10] ply  71 W: Rc7+
+    [G3/10] ply  81 W: R6b7+
+    [G3/10] ply  91 W: Ke1
+    [G3/10] ply 101 W: Rb6
+  Game 3: PureStockfish(d=10) wins in 109 moves (0.7s)
+  [G4/10] W=Maia1900 vs B=PureStockfish(d=10)
+    [G4/10] starting
+    [G4/10] ply  11 W: Nf3
+    [G4/10] ply  21 W: Be3
+    [G4/10] ply  31 W: c4
+  Game 4: PureStockfish(d=10) wins in 40 moves (0.5s)
+  [G5/10] W=PureStockfish(d=10) vs B=Maia1900
+    [G5/10] starting
+    [G5/10] ply  11 W: Be3
+    [G5/10] ply  21 W: Qd2
+    [G5/10] ply  31 W: Na5
+    [G5/10] ply  41 W: h6
+    [G5/10] ply  51 W: Bh3
+  Game 5: PureStockfish(d=10) wins in 59 moves (0.5s)
+  [G6/10] W=Maia1900 vs B=PureStockfish(d=10)
+    [G6/10] starting
+    [G6/10] ply  11 W: Nf3
+    [G6/10] ply  21 W: Bf4
+    [G6/10] ply  31 W: Qxa7
+    [G6/10] ply  41 W: Bf3
+    [G6/10] ply  51 W: Qc5
+  Game 6: PureStockfish(d=10) wins in 54 moves (0.5s)
+  [G7/10] W=PureStockfish(d=10) vs B=Maia1900
+    [G7/10] starting
+    [G7/10] ply  11 W: Be3
+    [G7/10] ply  21 W: Kb1
+    [G7/10] ply  31 W: fxe5
+    [G7/10] ply  41 W: Bxd7+
+  Game 7: PureStockfish(d=10) wins in 45 moves (0.4s)
+  [G8/10] W=Maia1900 vs B=PureStockfish(d=10)
+    [G8/10] starting
+    [G8/10] ply  11 W: N1c3
+    [G8/10] ply  21 W: c3
+    [G8/10] ply  31 W: a4
+    [G8/10] ply  41 W: cxb4
+    [G8/10] ply  51 W: b7
+    [G8/10] ply  61 W: Kg3
+  Game 8: PureStockfish(d=10) wins in 70 moves (0.7s)
+  [G9/10] W=PureStockfish(d=10) vs B=Maia1900
+    [G9/10] starting
+    [G9/10] ply  11 W: Be3
+    [G9/10] ply  21 W: O-O-O
+    [G9/10] ply  31 W: exd5
+    [G9/10] ply  41 W: Rd2
+    [G9/10] ply  51 W: Nc1
+    [G9/10] ply  61 W: Rxe4
+    [G9/10] ply  71 W: Rd8+
+    [G9/10] ply  81 W: bxa4
+    [G9/10] ply  91 W: Ne3
+    [G9/10] ply 101 W: Rxh5
+    [G9/10] ply 111 W: a8=Q
+    [G9/10] ply 121 W: Kc2
+  Game 9: PureStockfish(d=10) wins in 123 moves (0.9s)
+  [G10/10] W=Maia1900 vs B=PureStockfish(d=10)
+    [G10/10] starting
+    [G10/10] ply  11 W: dxc3
+    [G10/10] ply  21 W: h4
+    [G10/10] ply  31 W: Ne5
+    [G10/10] ply  41 W: b3
+    [G10/10] ply  51 W: Rxf6
+    [G10/10] ply  61 W: hxg7
+    [G10/10] ply  71 W: c3
+    [G10/10] ply  81 W: Kb4
+    [G10/10] ply  91 W: Kc7
+    [G10/10] ply 101 W: a5
+  Game 10: PureStockfish(d=10) wins in 102 moves (0.7s)
+
+============================================================
+RESULTS: PureStockfish(d=10) vs Maia1900
+============================================================
+  PureStockfish(d=10): 10W / 0D / 0L
+  Score: 100.0%
+  Avg game length: 70 moves
+============================================================
+
+======================================================================
+FINAL COMPARISON
+======================================================================
+Matchup                                  Score      W-D-L  AvgLen
+----------------------------------------------------------------------
+Nettlesome vs Maia                      90.0%      9-0-1     89
+Nettlesome+EV vs Maia                  100.0%     10-0-0     68
+NettlesomeTight vs Maia                100.0%     10-0-0     68
+NettlesomeTight+EV vs Maia              95.0%      9-1-0     81
+PureStockfish vs Maia                  100.0%     10-0-0     70
+
+  Nettlesome vs Maia                90.0%  (edge over SF: -10.0%)
+  Nettlesome+EV vs Maia            100.0%  (edge over SF: +0.0%)
+  NettlesomeTight vs Maia          100.0%  (edge over SF: +0.0%)
+  NettlesomeTight+EV vs Maia        95.0%  (edge over SF: -5.0%)
+  PureStockfish vs Maia            100.0%  (control)
+

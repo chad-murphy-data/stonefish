@@ -1,0 +1,34 @@
+QA-tester: 15 games per find-prob, depth=10
+Find probabilities: [0.3, 0.5, 0.7, 0.9]
+Opponent: CoinFlipTesterBot (SF baseline + weighted coin at trap moments)
+======================================================================
+
+=== find_probability = 0.30 (15 games) ===
+  G 1: W  129mv  moments= 2  found= 1  find=  50%  26.3s
+  G 2: W  134mv  moments= 7  found= 0  find=   0%  23.3s
+  G 3: W  101mv  moments= 5  found= 2  find=  40%  15.9s
+  G 4: L   79mv  moments= 4  found= 2  find=  50%  16.2s
+  G 5: W   61mv  moments= 3  found= 0  find=   0%  12.4s
+  G 6: L   75mv  moments= 3  found= 2  find=  67%  12.1s
+  G 7: L  108mv  moments= 3  found= 2  find=  67%  11.6s
+  G 8: L   57mv  moments= 2  found= 2  find= 100%  7.0s
+  G 9: L  146mv  moments= 5  found= 4  find=  80%  22.7s
+  G10: W   84mv  moments= 5  found= 0  find=   0%  18.3s
+  G11: W  109mv  moments= 7  found= 2  find=  29%  16.6s
+  G12: W  142mv  moments= 6  found= 0  find=   0%  23.4s
+  G13: L   70mv  moments= 4  found= 2  find=  50%  12.3s
+  G14: L   67mv  moments= 3  found= 3  find= 100%  4.6s
+  G15: W   87mv  moments= 5  found= 2  find=  40%  13.2s
+
+=== find_probability = 0.50 (15 games) ===
+  G 1: W   69mv  moments= 3  found= 1  find=  33%  14.6s
+  G 2: L   57mv  moments= 2  found= 2  find= 100%  8.3s
+  G 3: W  105mv  moments= 5  found= 3  find=  60%  19.0s
+  G 4: D  200mv  moments= 9  found= 5  find=  56%  30.6s
+  G 5: W  123mv  moments= 9  found= 1  find=  11%  23.3s
+  G 6: L   69mv  moments= 3  found= 2  find=  67%  8.4s
+  G 7: D  198mv  moments= 3  found= 2  find=  67%  32.0s
+  G 8: W   90mv  moments= 3  found= 3  find= 100%  14.3s
+  G 9: L   98mv  moments= 6  found= 3  find=  50%  18.4s
+  G10: L   63mv  moments= 2  found= 2  find= 100%  7.5s
+  G11: D  200mv  moments=12  found= 6  find=  50%  33.5s
